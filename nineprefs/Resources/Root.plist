@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>items</key>
+	<array>
+        
+        <dict>
+            <key>cell</key>
+            <string>PSGroupCell</string>
+            <key>headerCellClass</key>
+            <string>NINEHeaderCell</string>
+            <key>footerText</key>
+            <string>Any changes require a respring.</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSSwitchCell</string>
+            <key>default</key>
+            <true/>
+            <key>defaults</key>
+            <string>com.thecasle.nineprefs</string>
+            <key>key</key>
+            <string>tweakEnabled</string>
+            <key>label</key>
+            <string>Enable tweak</string>
+            <key>PostNotification</key>
+            <string>com.thecasle.nineprefs/ReloadPrefs</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSGroupCell</string>
+            <key>label</key>
+            <string>Settings</string>
+            <key>footerText</key>
+            <string>Extend notification cell to screen edge. Recommend disabling for iPads.</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSSwitchCell</string>
+            <key>default</key>
+            <true/>
+            <key>defaults</key>
+            <string>com.thecasle.nineprefs</string>
+            <key>key</key>
+            <string>shadedEnabled</string>
+            <key>label</key>
+            <string>Enable header background</string>
+            <key>PostNotification</key>
+            <string>com.thecasle.nineprefs/ReloadPrefs</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSSwitchCell</string>
+            <key>default</key>
+            <true/>
+            <key>defaults</key>
+            <string>com.thecasle.nineprefs</string>
+            <key>key</key>
+            <string>extendEnabled</string>
+            <key>label</key>
+            <string>Enable extend to edge</string>
+            <key>PostNotification</key>
+            <string>com.thecasle.nineprefs/ReloadPrefs</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSGroupCell</string>
+            <key>label</key>
+            <string>Background</string>
+            <key>footerText</key>
+            <string>Requires different lockscreen/homescreen wallpapers. Prevents nine from adding home wallpaper to background.</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSSwitchCell</string>
+            <key>default</key>
+            <false/>
+            <key>defaults</key>
+            <string>com.thecasle.nineprefs</string>
+            <key>key</key>
+            <string>iconBackgroundDisabled</string>
+            <key>label</key>
+            <string>Disable SpringBoard icons</string>
+            <key>PostNotification</key>
+            <string>com.thecasle.nineprefs/ReloadPrefs</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSSwitchCell</string>
+            <key>default</key>
+            <false/>
+            <key>defaults</key>
+            <string>com.thecasle.nineprefs</string>
+            <key>key</key>
+            <string>enableAlwaysBlur</string>
+            <key>label</key>
+            <string>Persistent blur</string>
+            <key>PostNotification</key>
+            <string>com.thecasle.nineprefs/ReloadPrefs</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSSwitchCell</string>
+            <key>default</key>
+            <false/>
+            <key>defaults</key>
+            <string>com.thecasle.nineprefs</string>
+            <key>key</key>
+            <string>lockBackgroundEnabled</string>
+            <key>label</key>
+            <string>Disable home wallpaper in NC</string>
+            <key>PostNotification</key>
+            <string>com.thecasle.nineprefs/ReloadPrefs</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSGroupCell</string>
+            <key>label</key>
+            <string>Banners</string>
+            <key>footerText</key>
+            <string>If remove icon, recommend disable iPX. iPX banners bugged on 11.3.1 (temporary), use remove icon instead.</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSSwitchCell</string>
+            <key>default</key>
+            <true/>
+            <key>defaults</key>
+            <string>com.thecasle.nineprefs</string>
+            <key>key</key>
+            <string>grabberEnabled</string>
+            <key>label</key>
+            <string>Enable grabber</string>
+            <key>PostNotification</key>
+            <string>com.thecasle.nineprefs/ReloadPrefs</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSSwitchCell</string>
+            <key>default</key>
+            <false/>
+            <key>defaults</key>
+            <string>com.thecasle.nineprefs</string>
+            <key>key</key>
+            <string>bannersEnabled</string>
+            <key>label</key>
+            <string>iPhoneX banners</string>
+            <key>PostNotification</key>
+            <string>com.thecasle.nineprefs/ReloadPrefs</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSSwitchCell</string>
+            <key>default</key>
+            <false/>
+            <key>defaults</key>
+            <string>com.thecasle.nineprefs</string>
+            <key>key</key>
+            <string>iconRemoveEnabled</string>
+            <key>label</key>
+            <string>Remove icon</string>
+            <key>PostNotification</key>
+            <string>com.thecasle.nineprefs/ReloadPrefs</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSGroupCell</string>
+            <key>footerText</key>
+            <string>Customization for nine tweak.</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSLinkCell</string>
+            <key>label</key>
+            <string>Customization</string>
+            <key>detail</key>
+            <string>NinePrefsCustomsController</string>
+            <key>isController</key>
+            <true/>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSGroupCell</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSGroupCell</string>
+            <key>label</key>
+            <string>Contact</string>
+        </dict>
+        <dict>
+            <key>cellClass</key>
+            <string>HBTwitterCell</string>
+            <key>label</key>
+            <string>Jake (the casle)</string>
+            <key>user</key>
+            <string>the_casle</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSGroupCell</string>
+            <key>label</key>
+            <string>Donate</string>
+        </dict>
+        <dict>
+            <key>cellClass</key>
+            <string>HBLinkTableCell</string>
+            <key>icon</key>
+            <string>PayPal.png</string>
+            <key>label</key>
+            <string>Via PayPal</string>
+            <key>url</key>
+            <string>https://www.paypal.me/thecasle</string>
+        </dict>
+        <dict>
+            <key>cellClass</key>
+            <string>HBLinkTableCell</string>
+            <key>icon</key>
+            <string>Venmo.png</string>
+            <key>label</key>
+            <string>Via Venmo</string>
+            <key>url</key>
+            <string>https://www.venmo.com/the_casle</string>
+        </dict>
+	</array>
+	<key>title</key>
+	<string>Nine</string>
+</dict>
+</plist>

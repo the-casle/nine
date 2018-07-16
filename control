@@ -1,0 +1,9 @@
+Package: com.thecasle.nine
+Name: nine
+Depends: mobilesubstrate, ws.hbang.common
+Version: 0.0.9
+Architecture: iphoneos-arm
+Description: Reworks the Notification Center
+Maintainer: Jake Kaslewicz
+Author: Jake Kaslewicz
+Section: Tweaks

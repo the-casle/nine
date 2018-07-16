@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>title</key>
+    <string>Customization</string>
+    
+	<key>items</key>
+	<array>
+        <dict>
+            <key>cell</key>
+            <string>PSGroupCell</string>
+            <key>footerText</key>
+            <string>Underlying is layered under both lockscreen and history notifications.</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSGroupCell</string>
+            <key>label</key>
+            <string>Blur Radius</string>
+            <key>footerText</key>
+            <string>Defaults: 20</string>
+        </dict>
+        <dict>
+            <key>cellClass</key>
+            <string>HBStepperTableCell</string>
+            <key>default</key>
+            <real>20</real>
+            <key>defaults</key>
+            <string>com.thecasle.nineprefs</string>
+            <key>key</key>
+            <string>generalBlurValue</string>
+            <key>label</key>
+            <string>Underlying: %i</string>
+            <key>max</key>
+            <real>50</real>
+            <key>min</key>
+            <real>0</real>
+            <key>singularLabel</key>
+            <string>Underlying: 1</string>
+        </dict>
+        <dict>
+            <key>cellClass</key>
+            <string>HBStepperTableCell</string>
+            <key>default</key>
+            <real>20</real>
+            <key>defaults</key>
+            <string>com.thecasle.nineprefs</string>
+            <key>key</key>
+            <string>historyBlurValue</string>
+            <key>label</key>
+            <string>Notification History: %i</string>
+            <key>max</key>
+            <real>50</real>
+            <key>min</key>
+            <real>0</real>
+            <key>singularLabel</key>
+            <string>Notification History: 1</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSGroupCell</string>
+            <key>label</key>
+            <string>Underlying Darkening</string>
+            <key>footerText</key>
+            <string>Default: 1</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSSliderCell</string>
+            <key>cellClass</key>
+            <string>HBDiscreteSliderTableCell</string>
+            <key>default</key>
+            <real>3</real>
+            <key>defaults</key>
+            <string>com.thecasle.nineprefs</string>
+            <key>showValue</key>
+            <true/>
+            <key>key</key>
+            <string>generalDarkeningValue</string>
+            <key>label</key>
+            <string>Discrete</string>
+            <key>max</key>
+            <real>10</real>
+            <key>min</key>
+            <real>0</real>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSGroupCell</string>
+            <key>height</key>
+            <integer>5</integer>
+            <key>label</key>
+            <string>History Darkening</string>
+            <key>footerText</key>
+            <string>Default: 3</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSSliderCell</string>
+            <key>cellClass</key>
+            <string>HBDiscreteSliderTableCell</string>
+            <key>default</key>
+            <real>1</real>
+            <key>defaults</key>
+            <string>com.thecasle.nineprefs</string>
+            <key>showValue</key>
+            <true/>
+            <key>key</key>
+            <string>historyDarkeningValue</string>
+            <key>label</key>
+            <string>Discrete</string>
+            <key>max</key>
+            <real>10</real>
+            <key>min</key>
+            <real>0</real>
+        </dict>
+	</array>
+	<key>title</key>
+	<string>Customization</string>
+</dict>
+</plist>
