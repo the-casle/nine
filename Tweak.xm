@@ -85,6 +85,8 @@ static BOOL enableIconRemove;
 }
 %end
 
+// Please hook controllers not views (typically), I really need to fix this
+
 %hook NCNotificationShortLookView
 %property (nonatomic, retain) _UITableViewCellSeparatorView *singleLine;
 %property (nonatomic, retain) UIVisualEffectView *notifEffectView;
