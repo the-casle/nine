@@ -27,6 +27,7 @@ extern "C" NSUInteger alphaOfBackground;
 - (id)_viewControllerForAncestor;
 @end
 
+
 @interface NCNotificationContentView
 -(id) _secondaryTextView;
 -(id) _primaryLabel;
