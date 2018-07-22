@@ -3,6 +3,7 @@
 #import <notify.h>
 #include <objc/runtime.h>
 #import <substrate.h>
+#import "TCSetFrame.h"
 
 
 //extern "C" CFNotificationCenterRef CFNotificationCenterGetDistributedCenter(void);
@@ -25,7 +26,6 @@ extern "C" NSUInteger alphaOfBackground;
 +(void) animateWithDuration:(CGFloat)arg1 animations:(id)arg2;
 - (id)_viewControllerForAncestor;
 @end
-
 
 @interface NCNotificationContentView
 -(id) _secondaryTextView;

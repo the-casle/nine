@@ -1,7 +1,7 @@
 include $(THEOS)/makefiles/common.mk
 
 TWEAK_NAME = nine
-nine_FILES = Tweak.xm TCBackgroundViewController.mm
+nine_FILES = Tweak.xm TCBackgroundViewController.mm TCSetFrame.m
 nine_PRIVATE_FRAMEWORKS = UIKit
 nine_EXTRA_FRAMEWORKS = Cephei 
 
