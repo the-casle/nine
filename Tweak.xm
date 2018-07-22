@@ -85,12 +85,12 @@ static BOOL enableIconRemove;
 }
 %end
 
-// Please hook controllers not views (typically), I really need to fix this
-
 %hook NCNotificationShortLookView
 %property (nonatomic, retain) _UITableViewCellSeparatorView *singleLine;
 %property (nonatomic, retain) UIVisualEffectView *notifEffectView;
 %property (nonatomic, retain) UIView *pullTab;
+
+
 
 -(void) layoutSubviews{
     %orig;
@@ -113,6 +113,7 @@ static BOOL enableIconRemove;
     
     // banner check, took a while to get right
     if([[[self _viewControllerForAncestor] view].superview isKindOfClass:%c(UITransitionView)]){
+        /*
         CGRect frame = self.frame;
         frame.size.width = UIScreen.mainScreen.bounds.size.width;
         [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
@@ -126,6 +127,19 @@ static BOOL enableIconRemove;
         
         frame.origin.y = 0;
         self.frame = frame;
+         */
+        
+        self.frameWidth = UIScreen.mainScreen.bounds.size.width;
+        [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
+        UIInterfaceOrientation interfaceOrientation = [[UIApplication sharedApplication] statusBarOrientation];
+        if (UIDeviceOrientationIsPortrait(interfaceOrientation)) {
+            if(enableBanners && self.frameY != 0){
+                self.frameHeight += 32;
+            }
+        }
+        [[UIDevice currentDevice] endGeneratingDeviceOrientationNotifications];
+        self.frameY = 0;
+        
         CGPoint notifCenter = self.center;
         notifCenter.x = self.superview.center.x;
         self.center = notifCenter;
@@ -147,10 +161,12 @@ static BOOL enableIconRemove;
         }
         
         if(!self.pullTab && enableGrabber == YES){
+            /*
             CGRect pullFrame = self.notifEffectView.frame;
             pullFrame.size.height = 4;
             pullFrame.size.width = 34;
             pullFrame.origin.x = (UIScreen.mainScreen.bounds.size.width / 2) - (pullFrame.size.width / 2);
+            
             [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
             UIInterfaceOrientation interfaceOrientation = [[UIApplication sharedApplication] statusBarOrientation];
             if(enableBanners){
@@ -164,8 +180,31 @@ static BOOL enableIconRemove;
             } else {
                 pullFrame.origin.y = self.notifEffectView.bounds.size.height - 9;
             }
+            
             [[UIDevice currentDevice] endGeneratingDeviceOrientationNotifications];
-            self.pullTab = [[UIView alloc] initWithFrame:pullFrame];
+             */
+            //self.pullTab = [[UIView alloc] initWithFrame:pullFrame];
+            self.pullTab = [[UIView alloc] initWithFrame:self.notifEffectView.frame];
+            
+            self.pullTab.frameHeight = 4;
+            self.pullTab.frameWidth = 34;
+            self.pullTab.FrameX = (UIScreen.mainScreen.bounds.size.width / 2) - (self.pullTab.frameWidth / 2);
+            
+            [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
+            UIInterfaceOrientation interfaceOrientation = [[UIApplication sharedApplication] statusBarOrientation];
+            if(enableBanners){
+                if (UIDeviceOrientationIsPortrait(interfaceOrientation))
+                {
+                    self.pullTab.FrameY = self.notifEffectView.bounds.size.height + 23;
+                } else {
+                    self.pullTab.FrameY = self.notifEffectView.bounds.size.height - 9;
+                }
+            } else {
+                self.pullTab.FrameY = self.notifEffectView.bounds.size.height - 9;
+            }
+            [[UIDevice currentDevice] endGeneratingDeviceOrientationNotifications];
+            
+            
             self.pullTab.backgroundColor = [UIColor whiteColor];
             [self.pullTab _setCornerRadius:2];
             [self addSubview:self.pullTab];
