@@ -1,3 +1,5 @@
+#import "TCSetFrame.h"
+
 CGRect CGRectSetWidth(CGRect rect, CGFloat width) {
     return CGRectMake(rect.origin.x, rect.origin.y, width, rect.size.height);
 }
