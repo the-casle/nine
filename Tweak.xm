@@ -8,6 +8,7 @@ static BOOL enableHeaders;
 static BOOL enableExtend;
 static BOOL enableGrabber;
 static BOOL enableIconRemove;
+static BOOL enableColorCube;
 
 
 %hook NCNotificationCombinedListViewController
@@ -75,22 +76,11 @@ static BOOL enableIconRemove;
 
 %end
 
-%hook NCNotificationShortLookViewController
--(void) viewDidLoad{
-    
-    %orig;
-    
-    // constraints
-    //UIView *superview = self.view;
-}
-%end
 
 %hook NCNotificationShortLookView
 %property (nonatomic, retain) _UITableViewCellSeparatorView *singleLine;
 %property (nonatomic, retain) UIVisualEffectView *notifEffectView;
 %property (nonatomic, retain) UIView *pullTab;
-
-
 
 -(void) layoutSubviews{
     %orig;
@@ -113,46 +103,64 @@ static BOOL enableIconRemove;
     
     // banner check, took a while to get right
     if([[[self _viewControllerForAncestor] view].superview isKindOfClass:%c(UITransitionView)]){
-        /*
-        CGRect frame = self.frame;
-        frame.size.width = UIScreen.mainScreen.bounds.size.width;
-        [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
-        UIInterfaceOrientation interfaceOrientation = [[UIApplication sharedApplication] statusBarOrientation];
-        if (UIDeviceOrientationIsPortrait(interfaceOrientation)) {
-            if(enableBanners && frame.origin.y != 0){
-                frame.size.height += 32;
-            }
-        }
-        [[UIDevice currentDevice] endGeneratingDeviceOrientationNotifications];
-        
-        frame.origin.y = 0;
-        self.frame = frame;
-         */
-        
         self.frameWidth = UIScreen.mainScreen.bounds.size.width;
         [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
         UIInterfaceOrientation interfaceOrientation = [[UIApplication sharedApplication] statusBarOrientation];
+        
+        //
         if (UIDeviceOrientationIsPortrait(interfaceOrientation)) {
             if(enableBanners && self.frameY != 0){
                 self.frameHeight += 32;
             }
         }
         [[UIDevice currentDevice] endGeneratingDeviceOrientationNotifications];
+        if(enableBanners && ){
+            
+        }
         self.frameY = 0;
         
         CGPoint notifCenter = self.center;
         notifCenter.x = self.superview.center.x;
         self.center = notifCenter;
-    
+        
         if(!self.notifEffectView){
             UIBlurEffect *blurEffect = [UIBlurEffect effectWithBlurRadius:17];
             self.notifEffectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
-            self.notifEffectView.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:.55];
-            CGRect newFrame = self.bounds;
-            newFrame.origin.x = 0;
-            newFrame.size.width = UIScreen.mainScreen.bounds.size.width;
             
-            self.notifEffectView.frame = newFrame;
+            // tint color
+            if(enableColorCube){
+                CCColorCube *colorCube = [[CCColorCube alloc] init];
+                UIImage *img = (UIImage *)[[self _headerContentView] icon];
+                UIColor *rgbWhite = [UIColor colorWithRed:1 green:1 blue:1 alpha:1];
+                NSArray *imgColors = [colorCube extractBrightColorsFromImage:img avoidColor:rgbWhite count:4];
+                UIColor *uicolor = [imgColors[0] retain];
+                CGColorRef color = [uicolor CGColor];
+                UIColor *darkenedImgColor = nil;
+                
+                int numComponents = CGColorGetNumberOfComponents(color);
+                
+                if (numComponents == 4)
+                {
+                    const CGFloat *components = CGColorGetComponents(color);
+                    CGFloat red = components[0];
+                    CGFloat green = components[1];
+                    CGFloat blue = components[2];
+                    //CGFloat alpha = components[3];
+                    darkenedImgColor = [UIColor colorWithRed: red - .2 green: green - .2 blue: blue - .2 alpha:1];
+                }
+                
+                [uicolor release];
+
+                
+                self.notifEffectView.backgroundColor = [darkenedImgColor colorWithAlphaComponent:.65];
+            } else {
+                self.notifEffectView.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:.55];
+            }
+
+            
+            self.notifEffectView.frame = self.bounds;
+            self.notifEffectView.frameX = 0;
+            self.notifEffectView.frameWidth = UIScreen.mainScreen.bounds.size.width;
             
             self.notifEffectView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
             
@@ -161,46 +169,23 @@ static BOOL enableIconRemove;
         }
         
         if(!self.pullTab && enableGrabber == YES){
-            /*
-            CGRect pullFrame = self.notifEffectView.frame;
-            pullFrame.size.height = 4;
-            pullFrame.size.width = 34;
-            pullFrame.origin.x = (UIScreen.mainScreen.bounds.size.width / 2) - (pullFrame.size.width / 2);
-            
-            [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
-            UIInterfaceOrientation interfaceOrientation = [[UIApplication sharedApplication] statusBarOrientation];
-            if(enableBanners){
-                
-                if (UIDeviceOrientationIsPortrait(interfaceOrientation))
-                {
-                    pullFrame.origin.y = self.notifEffectView.bounds.size.height + 23;
-                } else {
-                    pullFrame.origin.y = self.notifEffectView.bounds.size.height - 9;
-                }
-            } else {
-                pullFrame.origin.y = self.notifEffectView.bounds.size.height - 9;
-            }
-            
-            [[UIDevice currentDevice] endGeneratingDeviceOrientationNotifications];
-             */
-            //self.pullTab = [[UIView alloc] initWithFrame:pullFrame];
             self.pullTab = [[UIView alloc] initWithFrame:self.notifEffectView.frame];
             
             self.pullTab.frameHeight = 4;
             self.pullTab.frameWidth = 34;
-            self.pullTab.FrameX = (UIScreen.mainScreen.bounds.size.width / 2) - (self.pullTab.frameWidth / 2);
+            self.pullTab.frameX = (UIScreen.mainScreen.bounds.size.width / 2) - (self.pullTab.frameWidth / 2);
             
             [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
             UIInterfaceOrientation interfaceOrientation = [[UIApplication sharedApplication] statusBarOrientation];
             if(enableBanners){
                 if (UIDeviceOrientationIsPortrait(interfaceOrientation))
                 {
-                    self.pullTab.FrameY = self.notifEffectView.bounds.size.height + 23;
+                    self.pullTab.frameY = self.notifEffectView.bounds.size.height + 23;
                 } else {
-                    self.pullTab.FrameY = self.notifEffectView.bounds.size.height - 9;
+                    self.pullTab.frameY = self.notifEffectView.bounds.size.height - 9;
                 }
             } else {
-                self.pullTab.FrameY = self.notifEffectView.bounds.size.height - 9;
+                self.pullTab.frameY = self.notifEffectView.bounds.size.height - 9;
             }
             [[UIDevice currentDevice] endGeneratingDeviceOrientationNotifications];
             
@@ -209,6 +194,7 @@ static BOOL enableIconRemove;
             [self.pullTab _setCornerRadius:2];
             [self addSubview:self.pullTab];
         }
+        
         self.singleLine.hidden = YES;
         
         if(enableIconRemove == YES){
@@ -219,6 +205,8 @@ static BOOL enableIconRemove;
             ((UILabel *)[header _titleLabel]).frame = headerFrame;
             
         }
+        
+        
         
     } else {
     // not a banner
@@ -232,41 +220,33 @@ static BOOL enableIconRemove;
             rotationCheckLandscape = YES;
         }
         [[UIDevice currentDevice] endGeneratingDeviceOrientationNotifications];
-        
-        CGRect notifFrame = self.frame;
         if(!enableExtend || rotationCheckLandscape == YES){
-            notifFrame.size.width = self.superview.frame.size.width - .5;
+            self.frameWidth = self.superview.frame.size.width - .5;
         } else {
-            notifFrame.size.width = UIScreen.mainScreen.bounds.size.width - ((UIScreen.mainScreen.bounds.size.width - self.superview.frame.size.width) / 2);
+            self.frameWidth = UIScreen.mainScreen.bounds.size.width - ((UIScreen.mainScreen.bounds.size.width - self.superview.frame.size.width) / 2);
         }
         
-        self.frame = notifFrame;
-        
-        CGRect lineFrame = self.frame;
-        lineFrame.size.height = .5;
-        lineFrame.origin.x = 12;
-        
-        if(!enableExtend || rotationCheckLandscape == YES){
-            lineFrame.size.width = self.frame.size.width - 17;
-        } else {
-            lineFrame.size.width = self.frame.size.width - 12;
-        }
-        
-        lineFrame.origin.y = 2 * self.center.y;
         if(!self.singleLine){
             
             self.singleLine.drawsWithVibrantLightMode = NO;
-            self.singleLine = [[%c(_UITableViewCellSeparatorView) alloc] initWithFrame:lineFrame];
+            self.singleLine = [[%c(_UITableViewCellSeparatorView) alloc] initWithFrame:self.frame];
             UIBlurEffect *effect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleDark];
             UIVibrancyEffect *vibEffect = [UIVibrancyEffect effectForBlurEffect:effect];
             [self.singleLine setSeparatorEffect:vibEffect];
             self.singleLine.alpha = .45;
-
-            //self.singleLine.frame = lineFrame;
+            
             [self addSubview:self.singleLine];
             
         }
-        self.singleLine.frame = lineFrame;
+        self.singleLine.frameHeight = .5;
+        self.singleLine.frameX = 12;
+        
+        if(!enableExtend || rotationCheckLandscape == YES){
+            self.singleLine.frameWidth = self.frame.size.width - 17;
+        } else {
+            self.singleLine.frameWidth = self.frame.size.width - 12;
+        }
+        self.singleLine.frameY = 2 * self.center.y;
     }
     %orig;
     [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
@@ -290,6 +270,70 @@ static BOOL enableIconRemove;
     
 }
 %end
+/*
+%hook _NCNotificationViewControllerView
+-(void) setContentView{
+    %orig;
+    NCNotificationShortLookView *shortView = (NCNotificationShortLookView *)self.contentView;
+    
+    if(!shortView.notifEffectView){
+        UIBlurEffect *blurEffect = [UIBlurEffect effectWithBlurRadius:17];
+        shortView.notifEffectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
+        
+        // tint color
+        if(enableColorCube){
+            CCColorCube *colorCube = [[CCColorCube alloc] init];
+            UIImage *img = (UIImage *)[[shortView _headerContentView] icon];
+            UIColor *rgbWhite = [UIColor colorWithRed:1 green:1 blue:.8 alpha:1];
+            NSArray *imgColors = [colorCube extractBrightColorsFromImage:img avoidColor:rgbWhite count:4];
+            //UIColor *darkenedImgColor = imgColors[0];
+            
+            shortView.notifEffectView.backgroundColor = [imgColors[0] colorWithAlphaComponent:.65];
+        } else {
+            shortView.notifEffectView.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:.55];
+        }
+        
+        
+        shortView.notifEffectView.frame = shortView.bounds;
+        shortView.notifEffectView.frameX = 0;
+        shortView.notifEffectView.frameWidth = UIScreen.mainScreen.bounds.size.width;
+        
+        shortView.notifEffectView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+        
+        [shortView addSubview:shortView.notifEffectView];
+        [shortView sendSubviewToBack:shortView.notifEffectView];
+    }
+    
+    if(!shortView.pullTab && enableGrabber == YES){
+        shortView.pullTab = [[UIView alloc] initWithFrame:shortView.notifEffectView.frame];
+        
+        shortView.pullTab.frameHeight = 4;
+        shortView.pullTab.frameWidth = 34;
+        shortView.pullTab.frameX = (UIScreen.mainScreen.bounds.size.width / 2) - (shortView.pullTab.frameWidth / 2);
+        
+        [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
+        UIInterfaceOrientation interfaceOrientation = [[UIApplication sharedApplication] statusBarOrientation];
+        if(enableBanners){
+            if (UIDeviceOrientationIsPortrait(interfaceOrientation))
+            {
+                shortView.pullTab.frameY = shortView.notifEffectView.bounds.size.height + 23;
+            } else {
+                shortView.pullTab.frameY = shortView.notifEffectView.bounds.size.height - 9;
+            }
+        } else {
+            shortView.pullTab.frameY = shortView.notifEffectView.bounds.size.height - 9;
+        }
+        [[UIDevice currentDevice] endGeneratingDeviceOrientationNotifications];
+        
+        
+        shortView.pullTab.backgroundColor = [UIColor whiteColor];
+        [shortView.pullTab _setCornerRadius:2];
+        [shortView addSubview:shortView.pullTab];
+    }
+    
+}
+%end
+*/
 
 %hook NCNotificationListSectionHeaderView
 %property (nonatomic, retain) UIVisualEffectView *headerEffectView;
@@ -409,6 +453,7 @@ static BOOL enableIconRemove;
                                  @"extendEnabled": @YES,
                                  @"grabberEnabled": @YES,
                                  @"iconRemoveEnabled": @NO,
+                                 @"colorEnabled": @NO,
                                  }];
     BOOL tweakEnabled = [settings boolForKey:@"tweakEnabled"];
     enableBanners = [settings boolForKey:@"bannersEnabled"];
@@ -416,6 +461,7 @@ static BOOL enableIconRemove;
     enableExtend = [settings boolForKey:@"extendEnabled"];
     enableGrabber = [settings boolForKey:@"grabberEnabled"];
     enableIconRemove = [settings boolForKey:@"iconRemoveEnabled"];
+    enableColorCube = [settings boolForKey:@"colorEnabled"];
     
     if(tweakEnabled) {
         %init;

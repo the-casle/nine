@@ -3,8 +3,8 @@
 #import <notify.h>
 #include <objc/runtime.h>
 #import <substrate.h>
-#import "TCSetFrame.h"
-
+#import "CustomWorks/TCSetFrame/TCSetFrame.h"
+#import "CustomWorks/ColorCube/CCColorCube.h"
 
 //extern "C" CFNotificationCenterRef CFNotificationCenterGetDistributedCenter(void);
 
