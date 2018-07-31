@@ -9,6 +9,7 @@ static BOOL enableExtend;
 static BOOL enableGrabber;
 static BOOL enableIconRemove;
 static BOOL enableColorCube;
+static BOOL enableBannerSection;
 
 
 %hook NCNotificationCombinedListViewController
@@ -76,7 +77,6 @@ static BOOL enableColorCube;
 
 %end
 
-
 %hook NCNotificationShortLookView
 %property (nonatomic, retain) _UITableViewCellSeparatorView *singleLine;
 %property (nonatomic, retain) UIVisualEffectView *notifEffectView;
@@ -84,137 +84,34 @@ static BOOL enableColorCube;
 
 -(void) layoutSubviews{
     %orig;
-    MSHookIvar<UIImageView *>(self, "_shadowView").hidden = YES;
-    
-    //Sets all text to white color
-    [[self _headerContentView] setTintColor:[UIColor whiteColor]];
-    [[[[self _headerContentView] _dateLabel] _layer] setFilters:nil];
-    [[[[self _headerContentView] _titleLabel] _layer] setFilters:nil];
-    for(id object in self.allSubviews){
-        if([object isKindOfClass:%c(NCNotificationContentView)]){
-            [[object _secondaryTextView] setTextColor:[UIColor whiteColor]];
-            [[object _primaryLabel] setTextColor:[UIColor whiteColor]];
-            [[object _primarySubtitleLabel] setTextColor:[UIColor whiteColor]];
-        }
-    }
-    
-    [[self backgroundMaterialView] setHidden:YES];
-    MSHookIvar<MTMaterialView *>(self, "_mainOverlayView").hidden = true;
-    
     // banner check, took a while to get right
-    if([[[self _viewControllerForAncestor] view].superview isKindOfClass:%c(UITransitionView)]){
-        self.frameWidth = UIScreen.mainScreen.bounds.size.width;
-        [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
-        UIInterfaceOrientation interfaceOrientation = [[UIApplication sharedApplication] statusBarOrientation];
+    if(![[[self _viewControllerForAncestor] view].superview isKindOfClass:%c(UITransitionView)]){
+        // not a banner
         
-        //
-        if (UIDeviceOrientationIsPortrait(interfaceOrientation)) {
-            if(enableBanners && self.frameY != 0){
-                self.frameHeight += 32;
+        // the defaults --------------------------
+        MSHookIvar<UIImageView *>(self, "_shadowView").hidden = YES;
+        
+        //Sets all text to white color
+        [[self _headerContentView] setTintColor:[UIColor whiteColor]];
+        [[[[self _headerContentView] _dateLabel] _layer] setFilters:nil];
+        [[[[self _headerContentView] _titleLabel] _layer] setFilters:nil];
+        for(id object in self.allSubviews){
+            if([object isKindOfClass:%c(NCNotificationContentView)]){
+                [[object _secondaryTextView] setTextColor:[UIColor whiteColor]];
+                [[object _primaryLabel] setTextColor:[UIColor whiteColor]];
+                [[object _primarySubtitleLabel] setTextColor:[UIColor whiteColor]];
             }
         }
-        [[UIDevice currentDevice] endGeneratingDeviceOrientationNotifications];
-        if(enableBanners && ){
-            
-        }
-        self.frameY = 0;
         
-        CGPoint notifCenter = self.center;
-        notifCenter.x = self.superview.center.x;
-        self.center = notifCenter;
+        [[self backgroundMaterialView] setHidden:YES];
+        MSHookIvar<MTMaterialView *>(self, "_mainOverlayView").hidden = true;
+        // end defaults --------------------------
         
-        if(!self.notifEffectView){
-            UIBlurEffect *blurEffect = [UIBlurEffect effectWithBlurRadius:17];
-            self.notifEffectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
-            
-            // tint color
-            if(enableColorCube){
-                CCColorCube *colorCube = [[CCColorCube alloc] init];
-                UIImage *img = (UIImage *)[[self _headerContentView] icon];
-                UIColor *rgbWhite = [UIColor colorWithRed:1 green:1 blue:1 alpha:1];
-                NSArray *imgColors = [colorCube extractBrightColorsFromImage:img avoidColor:rgbWhite count:4];
-                UIColor *uicolor = [imgColors[0] retain];
-                CGColorRef color = [uicolor CGColor];
-                UIColor *darkenedImgColor = nil;
-                
-                int numComponents = CGColorGetNumberOfComponents(color);
-                
-                if (numComponents == 4)
-                {
-                    const CGFloat *components = CGColorGetComponents(color);
-                    CGFloat red = components[0];
-                    CGFloat green = components[1];
-                    CGFloat blue = components[2];
-                    //CGFloat alpha = components[3];
-                    darkenedImgColor = [UIColor colorWithRed: red - .2 green: green - .2 blue: blue - .2 alpha:1];
-                }
-                
-                [uicolor release];
-
-                
-                self.notifEffectView.backgroundColor = [darkenedImgColor colorWithAlphaComponent:.65];
-            } else {
-                self.notifEffectView.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:.55];
-            }
-
-            
-            self.notifEffectView.frame = self.bounds;
-            self.notifEffectView.frameX = 0;
-            self.notifEffectView.frameWidth = UIScreen.mainScreen.bounds.size.width;
-            
-            self.notifEffectView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-            
-            [self addSubview:self.notifEffectView];
-            [self sendSubviewToBack:self.notifEffectView];
-        }
-        
-        if(!self.pullTab && enableGrabber == YES){
-            self.pullTab = [[UIView alloc] initWithFrame:self.notifEffectView.frame];
-            
-            self.pullTab.frameHeight = 4;
-            self.pullTab.frameWidth = 34;
-            self.pullTab.frameX = (UIScreen.mainScreen.bounds.size.width / 2) - (self.pullTab.frameWidth / 2);
-            
-            [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
-            UIInterfaceOrientation interfaceOrientation = [[UIApplication sharedApplication] statusBarOrientation];
-            if(enableBanners){
-                if (UIDeviceOrientationIsPortrait(interfaceOrientation))
-                {
-                    self.pullTab.frameY = self.notifEffectView.bounds.size.height + 23;
-                } else {
-                    self.pullTab.frameY = self.notifEffectView.bounds.size.height - 9;
-                }
-            } else {
-                self.pullTab.frameY = self.notifEffectView.bounds.size.height - 9;
-            }
-            [[UIDevice currentDevice] endGeneratingDeviceOrientationNotifications];
-            
-            
-            self.pullTab.backgroundColor = [UIColor whiteColor];
-            [self.pullTab _setCornerRadius:2];
-            [self addSubview:self.pullTab];
-        }
-        
-        self.singleLine.hidden = YES;
-        
-        if(enableIconRemove == YES){
-            MTPlatterHeaderContentView *header = [self _headerContentView];
-            header.iconButton.hidden = YES;
-            CGRect headerFrame = ((UILabel *)[header _titleLabel]).frame;
-            headerFrame.origin.x = -13;
-            ((UILabel *)[header _titleLabel]).frame = headerFrame;
-            
-        }
-        
-        
-        
-    } else {
-    // not a banner
         
         BOOL rotationCheckLandscape = NO;
         [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
         UIInterfaceOrientation interfaceOrientation = [[UIApplication sharedApplication] statusBarOrientation];
-
+        
         if (UIDeviceOrientationIsLandscape(interfaceOrientation))
         {
             rotationCheckLandscape = YES;
@@ -247,11 +144,132 @@ static BOOL enableColorCube;
             self.singleLine.frameWidth = self.frame.size.width - 12;
         }
         self.singleLine.frameY = 2 * self.center.y;
+        
+    } else if(enableBannerSection == YES){
+        // is a banner
+        
+        // the defaults --------------------------
+        MSHookIvar<UIImageView *>(self, "_shadowView").hidden = YES;
+        
+        //Sets all text to white color
+        [[self _headerContentView] setTintColor:[UIColor whiteColor]];
+        [[[[self _headerContentView] _dateLabel] _layer] setFilters:nil];
+        [[[[self _headerContentView] _titleLabel] _layer] setFilters:nil];
+        for(id object in self.allSubviews){
+            if([object isKindOfClass:%c(NCNotificationContentView)]){
+                [[object _secondaryTextView] setTextColor:[UIColor whiteColor]];
+                [[object _primaryLabel] setTextColor:[UIColor whiteColor]];
+                [[object _primarySubtitleLabel] setTextColor:[UIColor whiteColor]];
+            }
+        }
+        
+        [[self backgroundMaterialView] setHidden:YES];
+        MSHookIvar<MTMaterialView *>(self, "_mainOverlayView").hidden = true;
+        // end defaults --------------------------
+        
+        self.frameWidth = UIScreen.mainScreen.bounds.size.width;
+        [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
+        UIInterfaceOrientation interfaceOrientation = [[UIApplication sharedApplication] statusBarOrientation];
+        
+        // this is where the bug is for 11.3.1
+        if (UIDeviceOrientationIsPortrait(interfaceOrientation)) {
+            if(enableBanners && self.frameY != -.5){
+                self.frameHeight += 32;
+            }
+        }
+        [[UIDevice currentDevice] endGeneratingDeviceOrientationNotifications];
+        self.frameY = -.5;
+        
+        CGPoint notifCenter = self.center;
+        notifCenter.x = self.superview.center.x;
+        self.center = notifCenter;
+        
+        if(!self.notifEffectView){
+            UIBlurEffect *blurEffect = [UIBlurEffect effectWithBlurRadius:17];
+            self.notifEffectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
+            
+            // tint color
+            if(enableColorCube){
+                CCColorCube *colorCube = [[CCColorCube alloc] init];
+                UIImage *img = (UIImage *)[[self _headerContentView] icon];
+                UIColor *rgbWhite = [UIColor colorWithRed:1 green:1 blue:1 alpha:1];
+                NSArray *imgColors = [colorCube extractBrightColorsFromImage:img avoidColor:rgbWhite count:4];
+                UIColor *uicolor = [imgColors[0] retain];
+                CGColorRef color = [uicolor CGColor];
+                UIColor *darkenedImgColor = nil;
+                
+                int numComponents = CGColorGetNumberOfComponents(color);
+                
+                if (numComponents == 4)
+                {
+                    const CGFloat *components = CGColorGetComponents(color);
+                    CGFloat red = components[0];
+                    CGFloat green = components[1];
+                    CGFloat blue = components[2];
+                    //CGFloat alpha = components[3];
+                    darkenedImgColor = [UIColor colorWithRed: red - .2 green: green - .2 blue: blue - .2 alpha:1];
+                }
+                
+                [uicolor release];
+                
+                self.notifEffectView.backgroundColor = [darkenedImgColor colorWithAlphaComponent:.65];
+            } else {
+                self.notifEffectView.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:.55];
+            }
+            
+            self.notifEffectView.frame = self.bounds;
+            self.notifEffectView.frameX = 0;
+            self.notifEffectView.frameWidth = UIScreen.mainScreen.bounds.size.width;
+            
+            self.notifEffectView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+            
+            [self addSubview:self.notifEffectView];
+            [self sendSubviewToBack:self.notifEffectView];
+        }
+        
+        if(!self.pullTab && enableGrabber == YES){
+            self.pullTab = [[UIView alloc] initWithFrame:self.notifEffectView.frame];
+            
+            self.pullTab.frameHeight = 4;
+            self.pullTab.frameWidth = 34;
+            self.pullTab.frameX = (UIScreen.mainScreen.bounds.size.width / 2) - (self.pullTab.frameWidth / 2);
+            
+            [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
+            UIInterfaceOrientation interfaceOrientation = [[UIApplication sharedApplication] statusBarOrientation];
+            if(enableBanners){
+                if (UIDeviceOrientationIsPortrait(interfaceOrientation))
+                {
+                    //self.pullTab.frameY = self.notifEffectView.bounds.size.height + 23;
+                    self.pullTab.frameY = self.notifEffectView.bounds.size.height - 9;
+                } else {
+                    self.pullTab.frameY = self.notifEffectView.bounds.size.height - 9;
+                }
+            } else {
+                self.pullTab.frameY = self.notifEffectView.bounds.size.height - 9;
+            }
+            [[UIDevice currentDevice] endGeneratingDeviceOrientationNotifications];
+            
+            
+            self.pullTab.backgroundColor = [UIColor whiteColor];
+            [self.pullTab _setCornerRadius:2];
+            [self addSubview:self.pullTab];
+        }
+        
+        self.singleLine.hidden = YES;
+        
+        if(enableIconRemove == YES){
+            MTPlatterHeaderContentView *header = [self _headerContentView];
+            header.iconButton.hidden = YES;
+            CGRect headerFrame = ((UILabel *)[header _titleLabel]).frame;
+            headerFrame.origin.x = -13;
+            ((UILabel *)[header _titleLabel]).frame = headerFrame;
+            
+        }
     }
     %orig;
     [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
     UIInterfaceOrientation interfaceOrientation = [[UIApplication sharedApplication] statusBarOrientation];
-    if (UIDeviceOrientationIsPortrait(interfaceOrientation))
+    if (UIDeviceOrientationIsPortrait(interfaceOrientation) && enableBannerSection == YES)
     {
         if([[[self _viewControllerForAncestor] view].superview isKindOfClass:%c(UITransitionView)]){
             for(id object in self.allSubviews){
@@ -454,6 +472,7 @@ static BOOL enableColorCube;
                                  @"grabberEnabled": @YES,
                                  @"iconRemoveEnabled": @NO,
                                  @"colorEnabled": @NO,
+                                 @"bannerSectionEnabled": @YES,
                                  }];
     BOOL tweakEnabled = [settings boolForKey:@"tweakEnabled"];
     enableBanners = [settings boolForKey:@"bannersEnabled"];
@@ -462,6 +481,7 @@ static BOOL enableColorCube;
     enableGrabber = [settings boolForKey:@"grabberEnabled"];
     enableIconRemove = [settings boolForKey:@"iconRemoveEnabled"];
     enableColorCube = [settings boolForKey:@"colorEnabled"];
+    enableBannerSection = [settings boolForKey:@"bannerSectionEnabled"];
     
     if(tweakEnabled) {
         %init;

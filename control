@@ -1,7 +1,7 @@
 Package: com.thecasle.nine
 Name: nine
 Depends: mobilesubstrate, ws.hbang.common
-Version: 0.0.9
+Version: 0.1.0
 Architecture: iphoneos-arm
 Description: Reworks the Notification Center
 Maintainer: Jake Kaslewicz

@@ -118,8 +118,20 @@
             <string>PSGroupCell</string>
             <key>label</key>
             <string>Banners</string>
-            <key>footerText</key>
-            <string>If remove icon, recommend disable iPX. iPX banners bugged on 11.3.1 (temporary), use remove icon instead.</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSSwitchCell</string>
+            <key>default</key>
+            <true/>
+            <key>defaults</key>
+            <string>com.thecasle.nineprefs</string>
+            <key>key</key>
+            <string>bannerSectionEnabled</string>
+            <key>label</key>
+            <string>Enable nine banners</string>
+            <key>PostNotification</key>
+            <string>com.thecasle.nineprefs/ReloadPrefs</string>
         </dict>
         <dict>
             <key>cell</key>
