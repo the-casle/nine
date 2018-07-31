@@ -26,6 +26,13 @@ static NSNumber *darkeningValueGeneral;
 
 - (instancetype) init{
     if(self = [super init]){
+
+        CGRect frame = UIScreen.mainScreen.bounds;
+        frame.size.width = (frame.size.width > frame.size.height) ? frame.size.width : frame.size.height;
+        frame.size.height = (frame.size.width > frame.size.height) ? frame.size.width : frame.size.height;
+
+        CGRect screenFrame = UIScreen.mainScreen.bounds;
+
         _sbCont = [objc_getClass("SBUIController") sharedInstance];
         _sbWallCont = [objc_getClass("SBWallpaperController") sharedInstance];
         
@@ -52,26 +59,26 @@ static NSNumber *darkeningValueGeneral;
         
         
         if(!self.view){
-            self.view = [[UIView alloc]initWithFrame:UIScreen.mainScreen.bounds];
+            self.view = [[UIView alloc] initWithFrame:screenFrame];
         }
         
         if(!self.blurView){
-            self.blurView = [[UIView alloc]initWithFrame:UIScreen.mainScreen.bounds];
+            self.blurView = [[UIView alloc] initWithFrame:frame];
             [self.view addSubview:self.blurView];
         }
         if(!self.blurImgView){
-            self.blurImgView = [[UIImageView alloc] initWithFrame:UIScreen.mainScreen.bounds];
+            self.blurImgView = [[UIImageView alloc] initWithFrame:frame];
             [self.blurView addSubview:self.blurImgView];
         }
         if(!self.iconImgView){
-            self.iconImgView = [[UIImageView alloc] initWithFrame:UIScreen.mainScreen.bounds];
+            self.iconImgView = [[UIImageView alloc] initWithFrame:frame];
             [self.blurView addSubview:self.iconImgView];
         }
         
         if(!self.blurHistoryEffectView){
             UIBlurEffect *blurEffect = [UIBlurEffect effectWithBlurRadius:blurValueHistory.doubleValue];
             self.blurHistoryEffectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
-            self.blurHistoryEffectView.frame = UIScreen.mainScreen.bounds;
+            self.blurHistoryEffectView.frame = frame;
             self.blurHistoryEffectView.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:darkeningValueHistory.doubleValue];
             
             self.blurEffectView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
@@ -84,7 +91,7 @@ static NSNumber *darkeningValueGeneral;
             UIBlurEffect *blurEffect = [UIBlurEffect effectWithBlurRadius:blurValueGeneral.doubleValue];
             self.blurEffectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
             self.blurEffectView.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:darkeningValueGeneral.doubleValue];
-            self.blurEffectView.frame = UIScreen.mainScreen.bounds;
+            self.blurEffectView.frame = frame;
             self.blurEffectView.alpha = 0;
             
             self.blurEffectView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
@@ -159,7 +166,7 @@ static NSNumber *darkeningValueGeneral;
 {
     NSDictionary* userInfo = notification.userInfo;
     NSNumber* content = (NSNumber*)userInfo[@"content"];
-    //NSLog(@"nine_TWEAK recieveAdjustAlpha, with content: %d", content.intValue);
+    NSLog(@"nine_TWEAK recieveAdjustAlpha, with content: %d", content.intValue);
     
     if(alwaysBlurEnabled == YES){
         content = [NSNumber numberWithInt:1];
