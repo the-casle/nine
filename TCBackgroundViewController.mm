@@ -26,8 +26,11 @@ static NSNumber *darkeningValueGeneral;
 
 - (instancetype) init{
     if(self = [super init]){
-
+        
+        // for devices which have a landscape mode we can use this simple trick
         CGRect frame = UIScreen.mainScreen.bounds;
+        // whichever dimension is shorter, make it equal to the other
+        // this creates a square which is bigger than the device size thus works both in landscape and portrait :)
         frame.size.width = (frame.size.width > frame.size.height) ? frame.size.width : frame.size.height;
         frame.size.height = (frame.size.width > frame.size.height) ? frame.size.width : frame.size.height;
 
@@ -166,7 +169,7 @@ static NSNumber *darkeningValueGeneral;
 {
     NSDictionary* userInfo = notification.userInfo;
     NSNumber* content = (NSNumber*)userInfo[@"content"];
-    NSLog(@"nine_TWEAK recieveAdjustAlpha, with content: %d", content.intValue);
+    //NSLog(@"nine_TWEAK recieveAdjustAlpha, with content: %d", content.intValue);
     
     if(alwaysBlurEnabled == YES){
         content = [NSNumber numberWithInt:1];
