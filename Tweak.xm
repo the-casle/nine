@@ -18,7 +18,7 @@ BOOL isOnLockscreen() {
         if ([[[[[[%c(SBFPasscodeLockTrackerForPreventLockAssertions) sharedInstance] valueForKey:@"_assertions"] allObjects] objectAtIndex:0] identifier] isEqualToString:@"UI unlocked"]) return NO;
         else return YES;
     }
-    else return YES;
+    else return NO;
 }
 
 static id _instance;
