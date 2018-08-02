@@ -137,6 +137,7 @@ extern "C" NSUInteger alphaOfBackground;
 @interface SBLockScreenManager
 +(id)sharedInstance;
 @property (readonly) BOOL isLockScreenVisible;
+@property (readonly) BOOL isUILocked;
 @end
 
 @interface SBFWallpaperView : UIView
@@ -148,6 +149,7 @@ extern "C" NSUInteger alphaOfBackground;
 @property (nonatomic, retain) SBWallpaperStyleInfo *homescreenStyleInfo;
 @property (assign,nonatomic) long long variant;
 @property (nonatomic,retain) SBFWallpaperView * homescreenWallpaperView;
+@property (nonatomic,retain) SBFWallpaperView *lockscreenWallpaperView;
 -(id)_wallpaperViewForVariant:(long long)arg1 ;
 @property (nonatomic,retain) SBFWallpaperView * sharedWallpaperView;
 @end
@@ -193,3 +195,24 @@ extern "C" NSUInteger alphaOfBackground;
 @property (nonatomic, retain) UIImageView* _homeScreenBlurredContentSnapshotImageView;
 
 @end
+
+@interface SBCoverSheetUnlockedEnvironmentHostingWindow : UIView
+@end
+
+@interface SBCoverSheetUnlockedEnvironmentHostingViewController (nine)
+@property (nonatomic,retain) UIView *maskingView;
+@end
+
+@interface SBCoverSheetUnlockedEnvironmentHoster
+@property (nonatomic,retain) SBCoverSheetUnlockedEnvironmentHostingViewController *viewController;
+@property (nonatomic,retain) UIWindow * hostingWindow;
+@end
+
+@interface SBCoverSheetPanelBackgroundContainerView : UIView
+
+@end
+
+@interface SBCoverSheetPrimarySlidingViewController
+@property (nonatomic,retain) SBCoverSheetPanelBackgroundContainerView * panelBackgroundContainerView;
+@end
+

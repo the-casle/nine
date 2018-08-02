@@ -84,94 +84,36 @@ static BOOL enableBannerSection;
 
 -(void) layoutSubviews{
     %orig;
+    MSHookIvar<UIImageView *>(self, "_shadowView").hidden = YES;
+    
+    //Sets all text to white color
+    [[self _headerContentView] setTintColor:[UIColor whiteColor]];
+    [[[[self _headerContentView] _dateLabel] _layer] setFilters:nil];
+    [[[[self _headerContentView] _titleLabel] _layer] setFilters:nil];
+    for(id object in self.allSubviews){
+        if([object isKindOfClass:%c(NCNotificationContentView)]){
+            [[object _secondaryTextView] setTextColor:[UIColor whiteColor]];
+            [[object _primaryLabel] setTextColor:[UIColor whiteColor]];
+            [[object _primarySubtitleLabel] setTextColor:[UIColor whiteColor]];
+        }
+    }
+    
+    [[self backgroundMaterialView] setHidden:YES];
+    MSHookIvar<MTMaterialView *>(self, "_mainOverlayView").hidden = true;
+    
     // banner check, took a while to get right
-    if(![[[self _viewControllerForAncestor] view].superview isKindOfClass:%c(UITransitionView)]){
-        // not a banner
-        
-        // the defaults --------------------------
-        MSHookIvar<UIImageView *>(self, "_shadowView").hidden = YES;
-        
-        //Sets all text to white color
-        [[self _headerContentView] setTintColor:[UIColor whiteColor]];
-        [[[[self _headerContentView] _dateLabel] _layer] setFilters:nil];
-        [[[[self _headerContentView] _titleLabel] _layer] setFilters:nil];
-        for(id object in self.allSubviews){
-            if([object isKindOfClass:%c(NCNotificationContentView)]){
-                [[object _secondaryTextView] setTextColor:[UIColor whiteColor]];
-                [[object _primaryLabel] setTextColor:[UIColor whiteColor]];
-                [[object _primarySubtitleLabel] setTextColor:[UIColor whiteColor]];
-            }
-        }
-        
-        [[self backgroundMaterialView] setHidden:YES];
-        MSHookIvar<MTMaterialView *>(self, "_mainOverlayView").hidden = true;
-        // end defaults --------------------------
-        
-        
-        BOOL rotationCheckLandscape = NO;
-        [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
-        UIInterfaceOrientation interfaceOrientation = [[UIApplication sharedApplication] statusBarOrientation];
-        
-        if (UIDeviceOrientationIsLandscape(interfaceOrientation))
-        {
-            rotationCheckLandscape = YES;
-        }
-        [[UIDevice currentDevice] endGeneratingDeviceOrientationNotifications];
-        if(!enableExtend || rotationCheckLandscape == YES){
-            self.frameWidth = self.superview.frame.size.width - .5;
-        } else {
-            self.frameWidth = UIScreen.mainScreen.bounds.size.width - ((UIScreen.mainScreen.bounds.size.width - self.superview.frame.size.width) / 2);
-        }
-        
-        if(!self.singleLine){
-            
-            self.singleLine.drawsWithVibrantLightMode = NO;
-            self.singleLine = [[%c(_UITableViewCellSeparatorView) alloc] initWithFrame:self.frame];
-            UIBlurEffect *effect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleDark];
-            UIVibrancyEffect *vibEffect = [UIVibrancyEffect effectForBlurEffect:effect];
-            [self.singleLine setSeparatorEffect:vibEffect];
-            self.singleLine.alpha = .45;
-            
-            [self addSubview:self.singleLine];
-            
-        }
-        self.singleLine.frameHeight = .5;
-        self.singleLine.frameX = 12;
-        
-        if(!enableExtend || rotationCheckLandscape == YES){
-            self.singleLine.frameWidth = self.frame.size.width - 17;
-        } else {
-            self.singleLine.frameWidth = self.frame.size.width - 12;
-        }
-        self.singleLine.frameY = 2 * self.center.y;
-        
-    } else if(enableBannerSection == YES){
+    
+    //if([[[self _viewControllerForAncestor] view].superview isKindOfClass:%c(UITransitionView)]){
+    if(![[self _viewControllerForAncestor] respondsToSelector:@selector(delegate)]){
+        return;
+    }
+    if([[[self _viewControllerForAncestor] delegate] isKindOfClass:%c(SBNotificationBannerDestination)]){
         // is a banner
-        
-        // the defaults --------------------------
-        MSHookIvar<UIImageView *>(self, "_shadowView").hidden = YES;
-        
-        //Sets all text to white color
-        [[self _headerContentView] setTintColor:[UIColor whiteColor]];
-        [[[[self _headerContentView] _dateLabel] _layer] setFilters:nil];
-        [[[[self _headerContentView] _titleLabel] _layer] setFilters:nil];
-        for(id object in self.allSubviews){
-            if([object isKindOfClass:%c(NCNotificationContentView)]){
-                [[object _secondaryTextView] setTextColor:[UIColor whiteColor]];
-                [[object _primaryLabel] setTextColor:[UIColor whiteColor]];
-                [[object _primarySubtitleLabel] setTextColor:[UIColor whiteColor]];
-            }
-        }
-        
-        [[self backgroundMaterialView] setHidden:YES];
-        MSHookIvar<MTMaterialView *>(self, "_mainOverlayView").hidden = true;
-        // end defaults --------------------------
-        
         self.frameWidth = UIScreen.mainScreen.bounds.size.width;
         [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
         UIInterfaceOrientation interfaceOrientation = [[UIApplication sharedApplication] statusBarOrientation];
         
-        // this is where the bug is for 11.3.1
+        //
         if (UIDeviceOrientationIsPortrait(interfaceOrientation)) {
             if(enableBanners && self.frameY != -.5){
                 self.frameHeight += 32;
@@ -212,10 +154,12 @@ static BOOL enableBannerSection;
                 
                 [uicolor release];
                 
+                
                 self.notifEffectView.backgroundColor = [darkenedImgColor colorWithAlphaComponent:.65];
             } else {
                 self.notifEffectView.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:.55];
             }
+            
             
             self.notifEffectView.frame = self.bounds;
             self.notifEffectView.frameX = 0;
@@ -265,11 +209,53 @@ static BOOL enableBannerSection;
             ((UILabel *)[header _titleLabel]).frame = headerFrame;
             
         }
+        
+        
+        
+    } else {
+        // not a banner
+        
+        BOOL rotationCheckLandscape = NO;
+        [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
+        UIInterfaceOrientation interfaceOrientation = [[UIApplication sharedApplication] statusBarOrientation];
+        
+        if (UIDeviceOrientationIsLandscape(interfaceOrientation))
+        {
+            rotationCheckLandscape = YES;
+        }
+        [[UIDevice currentDevice] endGeneratingDeviceOrientationNotifications];
+        if(!enableExtend || rotationCheckLandscape == YES){
+            self.frameWidth = self.superview.frame.size.width - .5;
+        } else {
+            self.frameWidth = UIScreen.mainScreen.bounds.size.width - ((UIScreen.mainScreen.bounds.size.width - self.superview.frame.size.width) / 2);
+        }
+        
+        if(!self.singleLine){
+            
+            self.singleLine.drawsWithVibrantLightMode = NO;
+            self.singleLine = [[%c(_UITableViewCellSeparatorView) alloc] initWithFrame:self.frame];
+            UIBlurEffect *effect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleDark];
+            UIVibrancyEffect *vibEffect = [UIVibrancyEffect effectForBlurEffect:effect];
+            [self.singleLine setSeparatorEffect:vibEffect];
+            self.singleLine.alpha = .45;
+            
+            [self addSubview:self.singleLine];
+            
+        }
+        self.singleLine.frameHeight = .5;
+        self.singleLine.frameX = 12;
+        
+        if(!enableExtend || rotationCheckLandscape == YES){
+            self.singleLine.frameWidth = self.frame.size.width - 17;
+        } else {
+            self.singleLine.frameWidth = self.frame.size.width - 12;
+        }
+        self.singleLine.frameY = 2 * self.center.y;
     }
     %orig;
     [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
     UIInterfaceOrientation interfaceOrientation = [[UIApplication sharedApplication] statusBarOrientation];
-    if (UIDeviceOrientationIsPortrait(interfaceOrientation) && enableBannerSection == YES)
+    if (UIDeviceOrientationIsPortrait(interfaceOrientation))
     {
         if([[[self _viewControllerForAncestor] view].superview isKindOfClass:%c(UITransitionView)]){
             for(id object in self.allSubviews){
@@ -284,7 +270,6 @@ static BOOL enableBannerSection;
         }
     }
     [[UIDevice currentDevice] endGeneratingDeviceOrientationNotifications];
-
     
 }
 %end
@@ -393,7 +378,11 @@ static BOOL enableBannerSection;
 
 %hook _NCNotificationViewControllerView
 -(void) layoutSubviews{
-    if(self.frame.origin.y != 0){
+    if(![[self.contentView _viewControllerForAncestor] respondsToSelector:@selector(delegate)]){
+        return;
+    }
+    if([[[self.contentView _viewControllerForAncestor] delegate] isKindOfClass:%c(SBNotificationBannerDestination)]){
+    //if(self.frame.origin.y != 0){
         CGRect frame = self.frame;
         frame.origin.y = 0;
         self.frame = frame;
@@ -401,6 +390,85 @@ static BOOL enableBannerSection;
     %orig;
 }
 %end
+
+%hook SBCoverSheetUnlockedEnvironmentHoster
+-(void)setUnlockedEnvironmentWindowsHidden:(BOOL)arg1{
+    %orig;
+    self.hostingWindow.hidden = NO;
+}
+%end
+
+%hook SBCoverSheetUnlockedEnvironmentHoster
+-(id) init{
+    if((self = %orig)){
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(recieveAdjustAlpha:) name:@"alphaReceived" object:nil];
+    }
+    return self;
+}
+
+%new
+-(void) recieveAdjustAlpha:(NSNotification*)notification
+{
+    NSDictionary* userInfo = notification.userInfo;
+    NSNumber* content = (NSNumber*)userInfo[@"content"];
+    if(content.intValue >= 1){
+        [UIView animateWithDuration:.5
+                              delay:.2
+                            options:UIViewAnimationOptionCurveEaseIn
+                         animations:^{self.viewController.maskingView.alpha = 0;}
+                         completion:nil];
+        self.viewController.maskingView.hidden = YES;
+        self.viewController.maskingView.alpha = 1;
+    } else {
+        self.viewController.maskingView.hidden = NO;
+    }
+}
+
+%end
+
+%hook SBCoverSheetPrimarySlidingViewController
+-(void)viewWillLayoutSubviews{
+    %orig;
+    self.panelBackgroundContainerView.hidden = YES;
+}
+%end
+
+
+// This needs to change
+
+%hook SBWallpaperController
+-(id) init {
+    if((self = %orig)){
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(recieveAdjustAlpha:) name:@"alphaReceived" object:nil];
+    }
+    return self;
+}
+%new
+-(void) recieveAdjustAlpha:(NSNotification*)notification{
+    NSDictionary* userInfo = notification.userInfo;
+    NSNumber* content = (NSNumber*)userInfo[@"content"];
+    if(content.intValue >= 1){
+        self.variant = 1;
+    }
+}
+%end
+
+/*
+ // trying to make this work right
+ %hook SBWallpaperController
+-(id)_activeWallpaperView{
+    NSLog(@"nine_TWEAK Variant");
+    
+    if([[%c(SBLockScreenManager) sharedInstance] isLockScreenVisible]){
+        self.variant = 1;
+    }
+     
+    return %orig;
+}
+%end
+*/
+
+
 /*
 
 // Media controller
