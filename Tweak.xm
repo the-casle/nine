@@ -398,6 +398,8 @@ static BOOL enableBannerSection;
 }
 %end
 
+
+// new background stuff
 %hook SBCoverSheetUnlockedEnvironmentHoster
 -(void)setUnlockedEnvironmentWindowsHidden:(BOOL)arg1{
     %orig;
@@ -405,42 +407,32 @@ static BOOL enableBannerSection;
 }
 %end
 
-%hook SBCoverSheetUnlockedEnvironmentHoster
--(id) init{
-    if((self = %orig)){
-        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(recieveAdjustAlpha:) name:@"alphaReceived" object:nil];
-    }
-    return self;
-}
-
-%new
--(void) recieveAdjustAlpha:(NSNotification*)notification
-{
-    NSDictionary* userInfo = notification.userInfo;
-    NSNumber* content = (NSNumber*)userInfo[@"content"];
-    if(content.intValue >= 1){
-        [UIView animateWithDuration:.5
-                              delay:.2
-                            options:UIViewAnimationOptionCurveEaseIn
-                         animations:^{self.viewController.maskingView.alpha = 0;}
-                         completion:nil];
-        self.viewController.maskingView.hidden = YES;
-        self.viewController.maskingView.alpha = 1;
+%hook SBCoverSheetUnlockedEnvironmentHostingViewController
+-(void) viewWillLayoutSubviews {
+    self.maskingView.hidden = YES;
+    /*
+    NSLog(@"nine_TWEAK BOOL: %d", [[%c(SBLockScreenManager) sharedInstance] isUILocked]);
+    if(![[%c(SBLockScreenManager) sharedInstance] isUILocked]){
+        [[%c(SBWallpaperController) sharedInstance] setVariant:1];
     } else {
-        self.viewController.maskingView.hidden = NO;
+        [[%c(SBWallpaperController) sharedInstance] setVariant:0];
     }
+     */
 }
-
 %end
 
 %hook SBCoverSheetPrimarySlidingViewController
 -(void)viewWillLayoutSubviews{
     %orig;
-    self.panelBackgroundContainerView.hidden = YES;
+    if(![[%c(SBLockScreenManager) sharedInstance] isUILocked]){
+        self.panelBackgroundContainerView.hidden = YES;
+    } else {
+        self.panelBackgroundContainerView.hidden = NO;
+    }
 }
 %end
 
-
+/*
 // This needs to change
 
 %hook SBWallpaperController
@@ -459,22 +451,29 @@ static BOOL enableBannerSection;
     }
 }
 %end
-
-/*
- // trying to make this work right
- %hook SBWallpaperController
--(id)_activeWallpaperView{
-    NSLog(@"nine_TWEAK Variant");
-    
-    if([[%c(SBLockScreenManager) sharedInstance] isLockScreenVisible]){
-        self.variant = 1;
-    }
-     
-    return %orig;
-}
-%end
 */
 
+id passcodeCont = nil;
+%hook SBFPasscodeLockTrackerForPreventLockAssertions
+-(id) init{
+    if((self = %orig)){
+        passcodeCont = self;
+    }
+    return self;
+}
+%end
+
+ // trying to make this work right
+ %hook SBWallpaperController
+-(void)setVariant:(long long)arg1 {
+    NSLog(@"nine_TWEAK %d", (int)[[passcodeCont valueForKey:@"_assertions"] count]);
+    if([[passcodeCont valueForKey:@"_assertions"] count] >= 1){
+        %orig(1);
+    } else {
+        %orig;
+    }
+}
+%end
 
 /*
 
