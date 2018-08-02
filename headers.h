@@ -1,4 +1,4 @@
-#import <foundation/foundation.h>
+#import <Foundation/Foundation.h>
 #import "TCBackgroundViewController.h"
 #import <notify.h>
 #include <objc/runtime.h>

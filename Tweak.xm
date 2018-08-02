@@ -11,6 +11,13 @@ static BOOL enableIconRemove;
 static BOOL enableColorCube;
 static BOOL enableBannerSection;
 
+%hook SBDashBoardWallpaperEffectView
+// gotta use this kinda hacky method
+-(void)layoutSubviews {
+    %orig;
+    ((UIView*)self).hidden = YES; // why on earth overriding "hidden" nor "setHidden:" doesn't work
+}
+%end
 
 %hook NCNotificationCombinedListViewController
 -(BOOL)hasContent{
