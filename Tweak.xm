@@ -11,17 +11,110 @@ static BOOL enableIconRemove;
 static BOOL enableColorCube;
 static BOOL enableBannerSection;
 
-%hook SBDashBoardWallpaperEffectView
-// gotta use this kinda hacky method
+BOOL isOnLockscreen() {
+    long count = [[[%c(SBFPasscodeLockTrackerForPreventLockAssertions) sharedInstance] valueForKey:@"_assertions"] count];
+    if (count == 0) return YES;
+    if (count == 1) {
+        if ([[[[[[%c(SBFPasscodeLockTrackerForPreventLockAssertions) sharedInstance] valueForKey:@"_assertions"] allObjects] objectAtIndex:0] identifier] isEqualToString:@"UI unlocked"]) return NO;
+        else return YES;
+    }
+    else return YES;
+}
+
+static id _instance;
+static id _lockGlyph;
+
+%hook SBFPasscodeLockTrackerForPreventLockAssertions
+- (id) init {
+    if (_instance == nil) _instance = %orig;
+    else %orig; // just in case it needs more than one instance
+    return _instance;
+}
+
+%new
+// add a shared instance so we can use it later
++ (id) sharedInstance {
+    if (!_instance) return [[%c(SBFPasscodeLockTrackerForPreventLockAssertions) alloc] init];
+    return _instance;
+}
+%end
+
+%hook SBCoverSheetUnlockedEnvironmentHostingWindow
+// makes the cover sheet transparent
+-(void)setHidden:(BOOL)arg1 {
+    if (isOnLockscreen()) %orig;
+    else %orig(NO);
+}
+-(BOOL)hidden {
+    return (isOnLockscreen()) ? %orig : NO;
+}
+%end
+
+%hook SBCoverSheetPanelBackgroundContainerView
+// removes the animation when opening cover sheet
 -(void)layoutSubviews {
     %orig;
-    ((UIView*)self).hidden = YES; // why on earth overriding "hidden" nor "setHidden:" doesn't work
+   ((UIView*)self).hidden = YES;
+}
+%end
+
+%hook SBFLockScreenDateView
+// hide clock
+-(void)layoutSubviews {
+    %orig;
+    if (!isOnLockscreen()) {
+        ((UIView*)self).hidden = YES;
+        if (_lockGlyph) ((UIView*)_lockGlyph).hidden = YES;
+    }
+    else {
+        if (_lockGlyph) ((UIView*)_lockGlyph).hidden = NO;
+    }
+}
+%end
+
+%hook SBDashBoardWallpaperEffectView
+// removes the wallpaper view when opening camera
+-(void)layoutSubviews {
+    %orig;
+    if (!isOnLockscreen()) {
+        ((UIView*)self).hidden = YES;
+    }
+}
+%end
+
+%hook PKFingerprintGlyphView
+// LockGlyph; keep the instance and hide it later in a method that gets called when it shows
+-(void)layoutSubviews {
+    %orig;
+    if (!_lockGlyph) {
+        _lockGlyph = self;
+    }
+}
+%end
+
+%hook NCNotificationListSectionRevealHintView
+// bigger "No Older Notifications" text
+-(void)layoutSubviews {
+	%orig;
+	MSHookIvar<UILabel *>(self, "_revealHintTitle").font = [UIFont fontWithName:@"HelveticaNeue-Light" size:24.0];
+}
+%end
+
+ %hook SBWallpaperController
+-(void)setVariant:(long long)arg1 {
+    NSLog(@"nine_TWEAK %d", (int)isOnLockscreen());
+    if(!isOnLockscreen()){
+        %orig(1);
+    } else {
+        %orig;
+    }
 }
 %end
 
 %hook NCNotificationCombinedListViewController
 -(BOOL)hasContent{
     BOOL content = %orig;
+
     NSNotificationCenter* nc = [NSNotificationCenter defaultCenter];
     
     
