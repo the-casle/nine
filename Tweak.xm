@@ -400,6 +400,17 @@ static BOOL enableBannerSection;
 
 
 // new background stuff
+
+id passcodeCont = nil;
+%hook SBFPasscodeLockTrackerForPreventLockAssertions
+-(id) init{
+    if((self = %orig)){
+        passcodeCont = self;
+    }
+    return self;
+}
+%end
+
 %hook SBCoverSheetUnlockedEnvironmentHoster
 -(void)setUnlockedEnvironmentWindowsHidden:(BOOL)arg1{
     %orig;
@@ -424,7 +435,7 @@ static BOOL enableBannerSection;
 %hook SBCoverSheetPrimarySlidingViewController
 -(void)viewWillLayoutSubviews{
     %orig;
-    if(![[%c(SBLockScreenManager) sharedInstance] isUILocked]){
+    if([[passcodeCont valueForKey:@"_assertions"] count] >= 1){
         self.panelBackgroundContainerView.hidden = YES;
     } else {
         self.panelBackgroundContainerView.hidden = NO;
@@ -432,36 +443,6 @@ static BOOL enableBannerSection;
 }
 %end
 
-/*
-// This needs to change
-
-%hook SBWallpaperController
--(id) init {
-    if((self = %orig)){
-        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(recieveAdjustAlpha:) name:@"alphaReceived" object:nil];
-    }
-    return self;
-}
-%new
--(void) recieveAdjustAlpha:(NSNotification*)notification{
-    NSDictionary* userInfo = notification.userInfo;
-    NSNumber* content = (NSNumber*)userInfo[@"content"];
-    if(content.intValue >= 1){
-        self.variant = 1;
-    }
-}
-%end
-*/
-
-id passcodeCont = nil;
-%hook SBFPasscodeLockTrackerForPreventLockAssertions
--(id) init{
-    if((self = %orig)){
-        passcodeCont = self;
-    }
-    return self;
-}
-%end
 
  // trying to make this work right
  %hook SBWallpaperController
