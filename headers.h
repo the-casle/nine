@@ -23,8 +23,11 @@ extern "C" NSUInteger alphaOfBackground;
 @property (nonatomic, strong) UIColor *backgroundColor;
 @property (nonatomic, strong) NSArray *allSubviews;
 @property (nonatomic, strong) UIView *_ui_superview;
+@property (nonatomic, strong) UIColor *debugHighlight;
 +(void) animateWithDuration:(CGFloat)arg1 animations:(id)arg2;
 - (id)_viewControllerForAncestor;
+-(id) createSnapshotWithRect:(CGRect)rect;
+
 @end
 
 

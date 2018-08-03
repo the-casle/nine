@@ -415,6 +415,25 @@ id passcodeCont = nil;
 -(void)setUnlockedEnvironmentWindowsHidden:(BOOL)arg1{
     %orig;
     self.hostingWindow.hidden = NO;
+    /*
+    UIImage *tempBackgroundImage = [UIImage imageWithCGImage:(CGImage *)[self.hostingWindow createSnapshotWithRect:self.hostingWindow.frame]];
+    NSLog(@"nine_TWEAK %@", tempBackgroundImage);
+    CCColorCube *colorCube = [[CCColorCube alloc] init];
+    UIImage *img = tempBackgroundImage;
+    NSArray *imgColors = [colorCube extractColorsFromImage:img flags:CCOrderByBrightness count:4];
+    NSLog(@"nine_TWEAK %@", imgColors[0]);
+    self.hostingWindow.debugHighlight = imgColors[0];
+    
+    @try {
+        
+    } @catch (NSException *exception) {
+        // log the exception as you wish
+        // you can then throw the exception up
+        NSLog(@"nine_TWEAK exception: %@", exception);
+        @throw exception;
+    }
+     */
+
 }
 %end
 
@@ -447,7 +466,6 @@ id passcodeCont = nil;
  // trying to make this work right
  %hook SBWallpaperController
 -(void)setVariant:(long long)arg1 {
-    NSLog(@"nine_TWEAK %d", (int)[[passcodeCont valueForKey:@"_assertions"] count]);
     if([[passcodeCont valueForKey:@"_assertions"] count] >= 1){
         %orig(1);
     } else {
