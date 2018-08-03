@@ -57,9 +57,9 @@ static id _lockGlyph;
    ((UIView*)self).hidden = YES;
 }
 %end
-
+/*
 %hook SBFLockScreenDateView
-// hide clock
+// hide clock - safemodes from time to time
 -(void)layoutSubviews {
     %orig;
     if (!isOnLockscreen()) {
@@ -71,7 +71,7 @@ static id _lockGlyph;
     }
 }
 %end
-
+*/
 %hook SBDashBoardWallpaperEffectView
 // removes the wallpaper view when opening camera
 -(void)layoutSubviews {
@@ -79,6 +79,18 @@ static id _lockGlyph;
     if (!isOnLockscreen()) {
         ((UIView*)self).hidden = YES;
     }
+}
+%end
+
+
+%hook SBCoverSheetUnlockedEnvironmentHostingViewController
+// hides the masking view
+-(void) viewWillLayoutSubviews {
+    %orig;
+    if (!isOnLockscreen()) {
+        ((UIView*)self).hidden = YES;
+    }
+    self.maskingView.hidden = YES;
 }
 %end
 
@@ -102,19 +114,33 @@ static id _lockGlyph;
 
  %hook SBWallpaperController
 -(void)setVariant:(long long)arg1 {
+    // setting the wallpaper, checks if uses different wallpapers
     NSLog(@"nine_TWEAK %d", (int)isOnLockscreen());
-    if(!isOnLockscreen()){
+    if(!isOnLockscreen() && self.homescreenWallpaperView != nil){
         %orig(1);
     } else {
         %orig;
     }
+    NSLog(@"nine_TWEAK isUnlocking %d", (int)[[%c(lockscreenManager) sharedInstance ] hasUIEverBeenLocked]);
+}
+-(id)lockscreenStyleInfo {
+    // the lockscreen can never got homescreen wallpaper
+    if(isOnLockscreen() && self.homescreenWallpaperView != nil){
+        self.variant = 0;
+    }
+    return %orig;
 }
 %end
+
 
 %hook NCNotificationCombinedListViewController
 -(BOOL)hasContent{
     BOOL content = %orig;
-
+    
+    if(!isOnLockscreen()){
+        //[self nz9_scrollToTop];
+    }
+        
     NSNotificationCenter* nc = [NSNotificationCenter defaultCenter];
     
     
@@ -136,6 +162,13 @@ static id _lockGlyph;
     NSDictionary* userInfo = @{@"content": @(content), @"history": @(tempBool)};
     [nc postNotificationName:@"updateTCBackgroundBlur" object:self userInfo:userInfo];
     return content;
+}
+
+%new
+-(void)nz9_scrollToTop {
+    //NCNotificationListCollectionView *scrollView = [self _scrollView];
+    [self forceNotificationHistoryRevealed:YES animated:YES]; // Brings notification history to top
+    //[scrollView setContentOffset:CGPointMake(0, -301) animated:YES]; // Scrolls to top
 }
 %end
 /*
@@ -490,25 +523,12 @@ static id _lockGlyph;
     %orig;
 }
 %end
-
-
-// new background stuff
-
-id passcodeCont = nil;
-%hook SBFPasscodeLockTrackerForPreventLockAssertions
--(id) init{
-    if((self = %orig)){
-        passcodeCont = self;
-    }
-    return self;
-}
-%end
-
+/*
 %hook SBCoverSheetUnlockedEnvironmentHoster
 -(void)setUnlockedEnvironmentWindowsHidden:(BOOL)arg1{
     %orig;
     self.hostingWindow.hidden = NO;
-    /*
+ 
     UIImage *tempBackgroundImage = [UIImage imageWithCGImage:(CGImage *)[self.hostingWindow createSnapshotWithRect:self.hostingWindow.frame]];
     NSLog(@"nine_TWEAK %@", tempBackgroundImage);
     CCColorCube *colorCube = [[CCColorCube alloc] init];
@@ -516,7 +536,7 @@ id passcodeCont = nil;
     NSArray *imgColors = [colorCube extractColorsFromImage:img flags:CCOrderByBrightness count:4];
     NSLog(@"nine_TWEAK %@", imgColors[0]);
     self.hostingWindow.debugHighlight = imgColors[0];
-    
+ 
     @try {
         
     } @catch (NSException *exception) {
@@ -525,47 +545,12 @@ id passcodeCont = nil;
         NSLog(@"nine_TWEAK exception: %@", exception);
         @throw exception;
     }
-     */
+ 
 
 }
 %end
+*/
 
-%hook SBCoverSheetUnlockedEnvironmentHostingViewController
--(void) viewWillLayoutSubviews {
-    self.maskingView.hidden = YES;
-    /*
-    NSLog(@"nine_TWEAK BOOL: %d", [[%c(SBLockScreenManager) sharedInstance] isUILocked]);
-    if(![[%c(SBLockScreenManager) sharedInstance] isUILocked]){
-        [[%c(SBWallpaperController) sharedInstance] setVariant:1];
-    } else {
-        [[%c(SBWallpaperController) sharedInstance] setVariant:0];
-    }
-     */
-}
-%end
-
-%hook SBCoverSheetPrimarySlidingViewController
--(void)viewWillLayoutSubviews{
-    %orig;
-    if([[passcodeCont valueForKey:@"_assertions"] count] >= 1){
-        self.panelBackgroundContainerView.hidden = YES;
-    } else {
-        self.panelBackgroundContainerView.hidden = NO;
-    }
-}
-%end
-
-
- // trying to make this work right
- %hook SBWallpaperController
--(void)setVariant:(long long)arg1 {
-    if([[passcodeCont valueForKey:@"_assertions"] count] >= 1){
-        %orig(1);
-    } else {
-        %orig;
-    }
-}
-%end
 
 /*
 

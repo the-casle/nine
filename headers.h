@@ -99,10 +99,20 @@ extern "C" NSUInteger alphaOfBackground;
 +(id) widgetPrimaryVibrancyEffect;
 @end
 
-@interface NCNotificationCombinedListViewController : UIViewController
+@interface NCNotificationListCollectionView : UICollectionView
+@end
+
+
+@interface NCNotificationListViewController : UICollectionViewController
+@end
+
+@interface NCNotificationCombinedListViewController : NCNotificationListViewController
 @property (assign,nonatomic) double prioritySectionLowestPosition;
 @property (assign,getter=isShowingNotificationsHistory,nonatomic) BOOL showingNotificationsHistory;
+-(void)forceNotificationHistoryRevealed:(BOOL)arg1 animated:(BOOL)arg2;
+- (NCNotificationListCollectionView *)_scrollView;
 -(BOOL) hasContent;
+-(void)nz9_scrollToTop;
 @end
 
 @interface NCNotificationListCell : UIView
@@ -141,6 +151,9 @@ extern "C" NSUInteger alphaOfBackground;
 +(id)sharedInstance;
 @property (readonly) BOOL isLockScreenVisible;
 @property (readonly) BOOL isUILocked;
+-(BOOL)isUIUnlocking;
+-(BOOL)hasUIEverBeenLocked;
+
 @end
 
 @interface SBFWallpaperView : UIView

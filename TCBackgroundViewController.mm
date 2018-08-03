@@ -18,6 +18,7 @@ static NSNumber *darkeningValueGeneral;
 //----------------------------------------------------------------
 
 extern BOOL isOnLockscreen();
+static id _instance;
 
 @implementation TCBackgroundViewController {
     SBUIController *_sbCont;
@@ -27,7 +28,6 @@ extern BOOL isOnLockscreen();
 
 - (instancetype) init{
     if(self = [super init]){
-
         CGRect frame = UIScreen.mainScreen.bounds;
         frame.size.width = (frame.size.width > frame.size.height) ? frame.size.width : frame.size.height;
         frame.size.height = (frame.size.width > frame.size.height) ? frame.size.width : frame.size.height;
@@ -105,8 +105,41 @@ extern BOOL isOnLockscreen();
         
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updateSceenShot:) name:@"updateTCBackgroundBlur" object:nil];
         
+        CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(),
+                                        NULL, // observer
+                                        lockStatusNotification, // callback
+                                        CFSTR("com.apple.springboard.DeviceLockStatusChanged"), // event name
+                                        NULL, // object
+                                        CFNotificationSuspensionBehaviorDeliverImmediately);
+        
     }
+    if (_instance == nil) _instance = self;
     return self;
+}
+
+
++ (id) sharedInstance {
+    if (!_instance) return [[TCBackgroundViewController alloc] init];
+    return _instance;
+}
+
+static void lockStatusNotification(CFNotificationCenterRef center, void *observer, CFStringRef name, const void *object, CFDictionaryRef userInfo) {
+    
+    
+    NSString *lockState = (__bridge NSString*)name;
+    NSLog(@"nine_TWEAK | Darwin notification NAME = %@",name);
+    
+    if ([lockState isEqualToString:@"com.apple.springboard.DeviceLockStatusChanged"]) {
+        NSLog(@"nine_TWEAK | Notification was shown");
+        if(!isOnLockscreen() && [[TCBackgroundViewController sharedInstance] blurView].alpha == 0){
+            [UIView animateWithDuration:.5
+                                  delay:.2
+                                options:UIViewAnimationOptionCurveEaseIn
+                             animations:^{[[TCBackgroundViewController sharedInstance] blurView].alpha = 1;}
+                             completion:nil];
+        }
+        //[[objc_getClass("SBWallpaperController") sharedInstance] setVariant:0];
+    }
 }
 
 -(void) updateSceenShot: (NSNotification *)notification {
