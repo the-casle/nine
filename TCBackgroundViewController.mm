@@ -17,6 +17,7 @@ static NSNumber *darkeningValueGeneral;
 
 //----------------------------------------------------------------
 
+extern BOOL isOnLockscreen();
 
 @implementation TCBackgroundViewController {
     SBUIController *_sbCont;
@@ -26,13 +27,11 @@ static NSNumber *darkeningValueGeneral;
 
 - (instancetype) init{
     if(self = [super init]){
-        
-        // for devices which have a landscape mode we can use this simple trick
+
         CGRect frame = UIScreen.mainScreen.bounds;
-        // whichever dimension is shorter, make it equal to the other
-        // this creates a square which is bigger than the device size thus works both in landscape and portrait :)
         frame.size.width = (frame.size.width > frame.size.height) ? frame.size.width : frame.size.height;
         frame.size.height = (frame.size.width > frame.size.height) ? frame.size.width : frame.size.height;
+        //frame.origin.y = -100;
 
         CGRect screenFrame = UIScreen.mainScreen.bounds;
 
@@ -169,9 +168,9 @@ static NSNumber *darkeningValueGeneral;
 {
     NSDictionary* userInfo = notification.userInfo;
     NSNumber* content = (NSNumber*)userInfo[@"content"];
-    //NSLog(@"nine_TWEAK recieveAdjustAlpha, with content: %d", content.intValue);
+    NSLog(@"nine_TWEAK recieveAdjustAlpha, with content: %d", content.intValue);
     
-    if(alwaysBlurEnabled == YES){
+    if(alwaysBlurEnabled || !isOnLockscreen()){
         content = [NSNumber numberWithInt:1];
     }
     
@@ -194,11 +193,6 @@ static NSNumber *darkeningValueGeneral;
     }
     alphaOfBackground = self.blurEffectView.alpha;
     if([_sbWallCont.homescreenStyleInfo.description containsString:@"Normal"]){
-        SBFStaticWallpaperView *wallpaperView = [_sbWallCont _wallpaperViewForVariant:1];
-        if(_sbWallCont.sharedWallpaperView == nil && enabledLockBackground == NO){
-            UIImage *img = [[wallpaperView.wallpaperImage copy] autorelease];
-            self.blurImgView.image = img;
-        }
         if(enabledLockBackground == YES){
             self.blurImgView.hidden = YES;
         }
