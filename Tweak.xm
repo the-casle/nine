@@ -82,18 +82,17 @@ static id _lockGlyph;
 %end
 
 %hook SBFLockScreenDateView
-=======
 // hide clock && lockglyph && update wallpaper; maybe make this optional?
->>>>>>> 2f19d63d961e70f9cfef42aaf214706cc33f27a3
+
 -(void)layoutSubviews {
     %orig;
     if (!isOnLockscreen()) {
         ((UIView*)self).hidden = YES; // clock
-        if (_lockGlyph) ((UIView*)_lockGlyph).hidden = YES; // lockglyph
+        //if (_lockGlyph) ((UIView*)_lockGlyph).hidden = YES; // lockglyph
     }
     else {
         [[%c(SBWallpaperController) sharedInstance] setVariant:0]; // fix unupdated wallpaper bug
-        if (_lockGlyph) ((UIView*)_lockGlyph).hidden = NO;
+        //if (_lockGlyph) ((UIView*)_lockGlyph).hidden = NO;
     }
 }
 %end
@@ -137,18 +136,15 @@ static id _lockGlyph;
 }
 %end
 
-=======
 %hook SBWallpaperController
 // show homescreen wallpaper while unlocked
 -(void)setVariant:(long long) arg1 {
     //NSLog(@"nine_TWEAK %d", (int)isOnLockscreen());
     if(!isOnLockscreen()) {
->>>>>>> 2f19d63d961e70f9cfef42aaf214706cc33f27a3
         %orig(1);
     } else {
         %orig();
     }
-    NSLog(@"nine_TWEAK isUnlocking %d", (int)[[%c(lockscreenManager) sharedInstance ] hasUIEverBeenLocked]);
 }
 -(id)lockscreenStyleInfo {
     // the lockscreen can never got homescreen wallpaper
@@ -595,7 +591,7 @@ static id _lockGlyph;
 }
 %end
 */
-/*
+
 // Posting all notifications :)
 
 
@@ -623,7 +619,7 @@ static id _lockGlyph;
  }
  }];
 }
-*/
+
 
 /* // debugging
  @try {
@@ -663,13 +659,13 @@ static id _lockGlyph;
     if(tweakEnabled) {
         %init;
     }
-    /*
+    
     [[NSNotificationCenter defaultCenter] addObserverForName:NULL object:NULL queue:NULL usingBlock:^(NSNotification *note) {
         if ([note.name containsString:@"UIViewAnimationDidCommitNotification"] || [note.name containsString:@"UIViewAnimationDidStopNotification"] || [note.name containsString:@"UIScreenBrightnessDidChangeNotification"]){
         } else {
             NSLog(@"UNIQUE: %@", note.name);
         }
     }];
-    */
+    
 }
 
