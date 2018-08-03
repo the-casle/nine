@@ -13,10 +13,10 @@ static BOOL enableBannerSection;
 
 BOOL isOnLockscreen() {
     long count = [[[%c(SBFPasscodeLockTrackerForPreventLockAssertions) sharedInstance] valueForKey:@"_assertions"] count];
-    if (count == 0) return YES;
+    if (count == 0) return YES; // array is empty
     if (count == 1) {
-        if ([[[[[[%c(SBFPasscodeLockTrackerForPreventLockAssertions) sharedInstance] valueForKey:@"_assertions"] allObjects] objectAtIndex:0] identifier] isEqualToString:@"UI unlocked"]) return NO;
-        else return YES;
+        if ([[[[[[%c(SBFPasscodeLockTrackerForPreventLockAssertions) sharedInstance] valueForKey:@"_assertions"] allObjects] objectAtIndex:0] identifier] isEqualToString:@"UI unlocked"]) return NO; // either device is unlocked or an app is opened (from the ones allowed on lockscreen). Luckily system gives us enough info so we can tell what happened
+        else return YES; // if there are more than one should be safe enough to assume device is unlocked
     }
     else return NO;
 }
@@ -59,14 +59,15 @@ static id _lockGlyph;
 %end
 
 %hook SBFLockScreenDateView
-// hide clock
+// hide clock && lockglyph && update wallpaper; maybe make this optional?
 -(void)layoutSubviews {
     %orig;
     if (!isOnLockscreen()) {
-        ((UIView*)self).hidden = YES;
-        if (_lockGlyph) ((UIView*)_lockGlyph).hidden = YES;
+        ((UIView*)self).hidden = YES; // clock
+        if (_lockGlyph) ((UIView*)_lockGlyph).hidden = YES; // lockglyph
     }
     else {
+        [[%c(SBWallpaperController) sharedInstance] setVariant:0]; // fix unupdated wallpaper bug
         if (_lockGlyph) ((UIView*)_lockGlyph).hidden = NO;
     }
 }
@@ -74,16 +75,15 @@ static id _lockGlyph;
 
 %hook SBDashBoardWallpaperEffectView
 // removes the wallpaper view when opening camera
+// checks if the blur is visible when applying the new animation
 -(void)layoutSubviews {
     %orig;
-    if (!isOnLockscreen()) {
-        ((UIView*)self).hidden = YES;
-    }
+    if (((SBDashBoardViewController *)((UIView *)self).superview/* some touch thingy */.superview/* SBDashBoardView */._viewDelegate/* SBDashBoardViewController */).backgroundCont/* TCBackgroundController */.blurEffectView.alpha != 0) ((UIView*)self).hidden = YES;
 }
 %end
 
 %hook PKFingerprintGlyphView
-// LockGlyph; keep the instance and hide it later in a method that gets called when it shows
+// keep an instance of lockglpyh and hide it later in a method that gets called when it shows
 -(void)layoutSubviews {
     %orig;
     if (!_lockGlyph) {
@@ -100,13 +100,14 @@ static id _lockGlyph;
 }
 %end
 
- %hook SBWallpaperController
--(void)setVariant:(long long)arg1 {
-    NSLog(@"nine_TWEAK %d", (int)isOnLockscreen());
-    if(!isOnLockscreen()){
+%hook SBWallpaperController
+// show homescreen wallpaper while unlocked
+-(void)setVariant:(long long) arg1 {
+    //NSLog(@"nine_TWEAK %d", (int)isOnLockscreen());
+    if(!isOnLockscreen()) {
         %orig(1);
     } else {
-        %orig;
+        %orig();
     }
 }
 %end
@@ -116,7 +117,6 @@ static id _lockGlyph;
     BOOL content = %orig;
 
     NSNotificationCenter* nc = [NSNotificationCenter defaultCenter];
-    
     
     BOOL initialUpdated = NO;
     if(initialUpdated == NO){
