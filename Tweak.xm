@@ -23,6 +23,7 @@ BOOL isOnLockscreen() {
 
 static id _instance;
 static id _lockGlyph;
+static id _envWindow = nil;
 
 %hook SBFPasscodeLockTrackerForPreventLockAssertions
 - (id) init {
@@ -48,6 +49,10 @@ static id _lockGlyph;
 -(BOOL)hidden {
     return (isOnLockscreen()) ? %orig : NO;
 }
+-(void)layoutSubviews {
+    %orig;
+    if (!_envWindow) _envWindow = self; // save instance
+}
 %end
 
 %hook SBCoverSheetPanelBackgroundContainerView
@@ -59,16 +64,18 @@ static id _lockGlyph;
 %end
 
 %hook SBFLockScreenDateView
-// hide clock && lockglyph && update wallpaper; maybe make this optional?
+// hide clock && lockglyph && update wallpaper && update envwindow
 -(void)layoutSubviews {
     %orig;
     if (!isOnLockscreen()) {
-        ((UIView*)self).hidden = YES; // clock
-        if (_lockGlyph) ((UIView*)_lockGlyph).hidden = YES; // lockglyph
+        ((UIView*)self).hidden = YES; // maybe make this optional?
+        if (_lockGlyph) ((UIView*)_lockGlyph).hidden = YES;
+        if (_envWindow) ((UIWindow*)_envWindow).hidden = NO;
     }
     else {
-        [[%c(SBWallpaperController) sharedInstance] setVariant:0]; // fix unupdated wallpaper bug
+        [[%c(SBWallpaperController) sharedInstance] setVariant:0];
         if (_lockGlyph) ((UIView*)_lockGlyph).hidden = NO;
+        if (_envWindow) ((UIWindow*)_envWindow).hidden = YES;
     }
 }
 %end
@@ -84,11 +91,12 @@ static id _lockGlyph;
 
 %hook PKFingerprintGlyphView
 // keep an instance of lockglpyh and hide it later in a method that gets called when it shows
--(void)layoutSubviews {
-    %orig;
+-(id)init {
     if (!_lockGlyph) {
-        _lockGlyph = self;
+        _lockGlyph = %orig;
+        return _lockGlyph;
     }
+    return %orig;
 }
 %end
 
