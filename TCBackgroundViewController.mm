@@ -138,7 +138,9 @@ static void lockStatusNotification(CFNotificationCenterRef center, void *observe
                              animations:^{[[TCBackgroundViewController sharedInstance] blurView].alpha = 1;}
                              completion:nil];
         }
-        //[[objc_getClass("SBWallpaperController") sharedInstance] setVariant:0];
+        if(isOnLockscreen() && [[objc_getClass("SBWallpaperController") sharedInstance] lockscreenWallpaperView] != nil){
+            [[objc_getClass("SBWallpaperController") sharedInstance] setVariant:0];
+        }
     }
 }
 

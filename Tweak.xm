@@ -38,7 +38,30 @@ static id _lockGlyph;
     return _instance;
 }
 %end
-
+/*
+ -(id) init{
+ if((self = %orig)){
+ self.hidden = NO;
+ }
+ return self;
+ }
+ 
+ -(void)setHidden:(BOOL)arg1 {
+ if (isOnLockscreen()) %orig;
+ else{
+ self.alpha = 0;
+ %orig(NO);
+ [UIView animateWithDuration:.5
+ delay:.2
+ options:UIViewAnimationOptionCurveEaseIn
+ animations:^{self.alpha = 1;}
+ completion:nil];
+ 
+ 
+ self.alpha = 1;
+ }
+ }
+ */
 %hook SBCoverSheetUnlockedEnvironmentHostingWindow
 // makes the cover sheet transparent
 -(void)setHidden:(BOOL)arg1 {
