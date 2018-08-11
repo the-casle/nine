@@ -10,8 +10,9 @@ static BOOL enableGrabber;
 static BOOL enableIconRemove;
 static BOOL enableColorCube;
 static BOOL enableBannerSection;
+static BOOL enableClearBackground;
 
-BOOL isOnLockscreen() {
+BOOL isUILocked() {
     long count = [[[%c(SBFPasscodeLockTrackerForPreventLockAssertions) sharedInstance] valueForKey:@"_assertions"] count];
     if (count == 0) return YES; // array is empty
     if (count == 1) {
@@ -21,9 +22,20 @@ BOOL isOnLockscreen() {
     else return NO;
 }
 
+static BOOL isOnCoverSheet; // according to the darwin notifications (the "raw data" that needs comparison)
+
+BOOL isOnLockscreen() {
+    //NSLog(@"nine_TWEAK | %d", isOnCoverSheet);
+    if(isUILocked()) return YES;
+    else if(!isUILocked() && isOnCoverSheet == YES) return YES;
+    else if(!isUILocked() && isOnCoverSheet == NO) return NO;
+    else return NO;
+}
+
 static id _instance;
+static id _instanceController;
 static id _lockGlyph;
-static id _envWindow = nil;
+//static id _envWindow = nil;
 
 %hook SBFPasscodeLockTrackerForPreventLockAssertions
 - (id) init {
@@ -39,88 +51,176 @@ static id _envWindow = nil;
     return _instance;
 }
 %end
-/*
- -(id) init{
- if((self = %orig)){
- self.hidden = NO;
- }
- return self;
- }
- 
- -(void)setHidden:(BOOL)arg1 {
- if (isOnLockscreen()) %orig;
- else{
- self.alpha = 0;
- %orig(NO);
- [UIView animateWithDuration:.5
- delay:.2
- options:UIViewAnimationOptionCurveEaseIn
- animations:^{self.alpha = 1;}
- completion:nil];
- 
- 
- self.alpha = 1;
- }
- }
- */
+
+%group ClearBackground
 %hook SBCoverSheetUnlockedEnvironmentHostingWindow
 // makes the cover sheet transparent
 -(void)setHidden:(BOOL)arg1 {
     if (isOnLockscreen()) %orig;
     else %orig(NO);
+        //NSLog(@"nine_TWEAK setting hidden");
 }
+
 -(BOOL)hidden {
     return (isOnLockscreen()) ? %orig : NO;
 }
+
+/*
 -(void)layoutSubviews {
     %orig;
     if (!_envWindow) _envWindow = self; // save instance
 }
+*/
+
 %end
 
 %hook SBCoverSheetPanelBackgroundContainerView
 // removes the animation when opening cover sheet
--(void)layoutSubviews {
+
+-(id) init{
+    if((self = %orig)){
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(didLockNotification:) name:@"SBFDeviceBlockStateDidChangeNotification" object:nil];
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(didHideCoverSheetNotification:) name:/*@"SBCoverSheetDidDismissNotification"*/@"SBCoverSheetWillPresentNotification" object:nil];
+    }
+    return self;
+}
+-(void)layoutSubviews{
     %orig;
-   ((UIView*)self).hidden = YES;
+    if(!isOnLockscreen()){
+        ((UIView*)self).hidden = YES;
+        NSLog(@"nine_TWEAK coversheet updates");
+    }
+}
+
+%new
+-(void) didHideCoverSheetNotification: (NSNotification *)notification {
+    if(!isUILocked()) isOnCoverSheet = NO;
+    if(!isOnLockscreen()){
+        ((UIView*)self).hidden = YES;
+    }
+}
+
+%new
+-(void) didLockNotification: (NSNotification *)notification {
+    if(isOnLockscreen()){
+        ((UIView*)self).hidden = NO;
+    }
 }
 %end
+
+%hook NCNotificationListSectionRevealHintView
+// bigger "No Older Notifications" text
+-(void)layoutSubviews {
+    %orig;
+    MSHookIvar<UILabel *>(self, "_revealHintTitle").font = [UIFont fontWithName:@"HelveticaNeue-Light" size:24.0];
+}
+%end
+
+%hook SBWallpaperController
+-(void)setVariant:(long long) arg1 {
+    //NSLog(@"nine_TWEAK %d", (int)isOnLockscreen());
+    if(!isOnLockscreen()) {
+        %orig(1);
+    } else {
+        %orig;
+    }
+}
+%end
+%end
+
+// Requires a few checkers for the clearBackground
+%hook SBCoverSheetUnlockedEnvironmentHostingViewController
+static void homescreenNotification(CFNotificationCenterRef center, void *observer, CFStringRef name, const void *object, CFDictionaryRef userInfo) {
+    NSString *lockState = (__bridge NSString*)name;
+    NSLog(@"nine_TWEAK | Darwin notification NAME = %@",name);
+    
+    if ([lockState isEqualToString:@"com.apple.springboard.DeviceLockStatusChanged"]) {
+        if(isUILocked()){
+            isOnCoverSheet = YES;
+        }
+        if(isOnLockscreen() && enableClearBackground){
+            [[objc_getClass("SBWallpaperController") sharedInstance] setVariant:0];
+            ((SBCoverSheetUnlockedEnvironmentHostingViewController *)[%c(SBCoverSheetUnlockedEnvironmentHostingViewController) sharedInstance]).maskingView.hidden = NO; /*This is 11.1 only I believe*/
+        }
+    }
+}
+static void homescreenAppearNotification(CFNotificationCenterRef center, void *observer, CFStringRef name, const void *object, CFDictionaryRef userInfo) {
+    NSString *lockState = (__bridge NSString*)name;
+    NSLog(@"nine_TWEAK | Darwin notification NAME = %@",name);
+    
+    if ([lockState isEqualToString:@"com.apple.springboard.homescreenunlocked"]) {
+        //isOnCoverSheet = NO;
+        if(!isOnLockscreen())[[%c(SBWallpaperController) sharedInstance] setVariant:1];
+        if(enableClearBackground)((SBCoverSheetUnlockedEnvironmentHostingViewController *)[%c(SBCoverSheetUnlockedEnvironmentHostingViewController) sharedInstance]).maskingView.hidden = YES; /*This is 11.1 only I believe*/
+    }
+}
+
+-(id) init{
+    if((self = %orig)){
+        
+        CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(),
+                                        NULL, // observer
+                                        homescreenNotification, // callback
+                                        CFSTR("com.apple.springboard.DeviceLockStatusChanged"), // event name
+                                        NULL, // object
+                                        CFNotificationSuspensionBehaviorDeliverImmediately);
+        CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(),
+                                        NULL, // observer
+                                        homescreenAppearNotification, // callback
+                                        CFSTR("com.apple.springboard.homescreenunlocked"), // event name
+                                        NULL, // object
+                                        CFNotificationSuspensionBehaviorDeliverImmediately);
+        
+    }
+    if (_instanceController == nil) _instanceController = self;
+        else %orig; // just in case it needs more than one instance
+    return _instanceController;
+}
+
+%new
+// add a shared instance so we can use it later
++ (id) sharedInstance {
+    if (!_instanceController) return [[%c(SBCoverSheetUnlockedEnvironmentHostingViewController) alloc] init];
+    return _instanceController;
+}
+%end
+
 
 %hook SBFLockScreenDateView
 // hide clock && lockglyph && update wallpaper && update envwindow
 -(void)layoutSubviews {
     %orig;
     if (!isOnLockscreen()) {
-        ((UIView*)self).hidden = YES; // maybe make this optional?
-        if (_lockGlyph) ((UIView*)_lockGlyph).hidden = YES;
-        if (_envWindow) ((UIWindow*)_envWindow).hidden = NO;
+        [UIView animateWithDuration:.5
+                              delay:.2
+                            options:UIViewAnimationOptionCurveEaseOut
+                         animations:^{((UIView*)self).alpha = 0;}
+                         completion:nil];
+        //((UIView*)self).hidden = YES; // maybe make this optional?
+        //if (_lockGlyph) ((UIView*)_lockGlyph).hidden = YES;
+        /*
+         if (_envWindow){
+         ((UIWindow*)_envWindow).hidden = NO;
+         [UIView animateWithDuration:.5
+         delay:.2
+         options:UIViewAnimationOptionCurveEaseIn
+         animations:^{((UIWindow*)_envWindow).alpha = 1;}
+         completion:nil];
+         
+         }
+         */
     }
     else {
-        [[%c(SBWallpaperController) sharedInstance] setVariant:0];
-        if (_lockGlyph) ((UIView*)_lockGlyph).hidden = NO;
-        if (_envWindow) ((UIWindow*)_envWindow).hidden = YES;
+        ((UIView*)self).alpha = 1;
+        //[[%c(SBWallpaperController) sharedInstance] setVariant:0];
+        //if (_lockGlyph) ((UIView*)_lockGlyph).hidden = NO;
+        /*
+         if (_envWindow){
+         ((UIWindow*)_envWindow).hidden = YES;
+         ((UIWindow*)_envWindow).alpha = 0;
+         }
+         */
     }
-}
-%end
-
-%hook SBDashBoardWallpaperEffectView
-// removes the wallpaper view when opening camera
-// checks if the blur is visible when applying the new animation
--(void)layoutSubviews {
-    %orig;
-    if (((SBDashBoardViewController *)((UIView *)self).superview/* some touch thingy */.superview/* SBDashBoardView */._viewDelegate/* SBDashBoardViewController */).backgroundCont/* TCBackgroundController */.blurEffectView.alpha != 0) ((UIView*)self).hidden = YES;
-}
-%end
-
-
-%hook SBCoverSheetUnlockedEnvironmentHostingViewController
-// hides the masking view
--(void) viewWillLayoutSubviews {
-    %orig;
-    if (!isOnLockscreen()) {
-        ((UIView*)self).hidden = YES;
-    }
-    self.maskingView.hidden = YES;
 }
 %end
 
@@ -135,42 +235,20 @@ static id _envWindow = nil;
 }
 %end
 
-%hook NCNotificationListSectionRevealHintView
-// bigger "No Older Notifications" text
+%hook SBDashBoardWallpaperEffectView
+// removes the wallpaper view when opening camera
+// checks if the blur is visible when applying the new animation
 -(void)layoutSubviews {
-	%orig;
-	MSHookIvar<UILabel *>(self, "_revealHintTitle").font = [UIFont fontWithName:@"HelveticaNeue-Light" size:24.0];
-}
+    %orig;
+    if (((SBDashBoardViewController *)((UIView *)self).superview/* some touch thingy */.superview/* SBDashBoardView */._viewDelegate/* SBDashBoardViewController */).backgroundCont/* TCBackgroundController */.blurEffectView.alpha != 0) ((UIView*)self).hidden = YES;
+        else ((UIView*)self).hidden = NO;
+            }
 %end
-
-%hook SBWallpaperController
-// show homescreen wallpaper while unlocked
--(void)setVariant:(long long) arg1 {
-    //NSLog(@"nine_TWEAK %d", (int)isOnLockscreen());
-    if(!isOnLockscreen()) {
-        %orig(1);
-    } else {
-        %orig();
-    }
-}
--(id)lockscreenStyleInfo {
-    // the lockscreen can never got homescreen wallpaper
-    if(isOnLockscreen() && self.homescreenWallpaperView != nil){
-        self.variant = 0;
-    }
-    return %orig;
-}
-%end
-
 
 %hook NCNotificationCombinedListViewController
 -(BOOL)hasContent{
     BOOL content = %orig;
-    
-    if(!isOnLockscreen()){
-        //[self nz9_scrollToTop];
-    }
-        
+
     NSNotificationCenter* nc = [NSNotificationCenter defaultCenter];
     
     BOOL initialUpdated = NO;
@@ -191,13 +269,6 @@ static id _envWindow = nil;
     NSDictionary* userInfo = @{@"content": @(content), @"history": @(tempBool)};
     [nc postNotificationName:@"updateTCBackgroundBlur" object:self userInfo:userInfo];
     return content;
-}
-
-%new
--(void)nz9_scrollToTop {
-    //NCNotificationListCollectionView *scrollView = [self _scrollView];
-    [self forceNotificationHistoryRevealed:YES animated:YES]; // Brings notification history to top
-    //[scrollView setContentOffset:CGPointMake(0, -301) animated:YES]; // Scrolls to top
 }
 %end
 /*
@@ -626,7 +697,7 @@ static id _envWindow = nil;
  }
  }];
 }
-
+*/
 
 /* // debugging
  @try {
@@ -653,6 +724,7 @@ static id _envWindow = nil;
                                  @"iconRemoveEnabled": @NO,
                                  @"colorEnabled": @NO,
                                  @"bannerSectionEnabled": @YES,
+                                 @"clearBackgroundEnabled": @YES,
                                  }];
     BOOL tweakEnabled = [settings boolForKey:@"tweakEnabled"];
     enableBanners = [settings boolForKey:@"bannersEnabled"];
@@ -662,9 +734,13 @@ static id _envWindow = nil;
     enableIconRemove = [settings boolForKey:@"iconRemoveEnabled"];
     enableColorCube = [settings boolForKey:@"colorEnabled"];
     enableBannerSection = [settings boolForKey:@"bannerSectionEnabled"];
+    enableClearBackground = [settings boolForKey:@"clearBackgroundEnabled"];
     
     if(tweakEnabled) {
         %init;
+    }
+    if(enableClearBackground) {
+        %init(ClearBackground);
     }
     
     [[NSNotificationCenter defaultCenter] addObserverForName:NULL object:NULL queue:NULL usingBlock:^(NSNotification *note) {
@@ -673,6 +749,7 @@ static id _envWindow = nil;
             NSLog(@"UNIQUE: %@", note.name);
         }
     }];
+    
     
 }
 

@@ -113,6 +113,8 @@ extern "C" NSUInteger alphaOfBackground;
 - (NCNotificationListCollectionView *)_scrollView;
 -(BOOL) hasContent;
 -(void)nz9_scrollToTop;
+-(void)_performRevealAnimationForSectionHeaders;
+
 @end
 
 @interface NCNotificationListCell : UIView
@@ -160,6 +162,15 @@ extern "C" NSUInteger alphaOfBackground;
 
 @end
 
+@interface SBFWallpaperConfiguration
+
+@end
+
+@interface SBFWallpaperConfigurationManager
+@property (nonatomic,copy,readonly) SBFWallpaperConfiguration * homeScreenWallpaperConfiguration;
+@end
+
+
 @interface SBWallpaperController
 +(id)sharedInstance;
 @property (nonatomic, retain) SBWallpaperStyleInfo *homescreenStyleInfo;
@@ -168,6 +179,10 @@ extern "C" NSUInteger alphaOfBackground;
 @property (nonatomic,retain) SBFWallpaperView *lockscreenWallpaperView;
 -(id)_wallpaperViewForVariant:(long long)arg1 ;
 @property (nonatomic,retain) SBFWallpaperView * sharedWallpaperView;
+@property (nonatomic,readonly) SBFWallpaperConfigurationManager * wallpaperConfigurationManager;
+
+-(id)_makeAndInsertWallpaperViewWithConfiguration:(id)arg1 forVariant:(long long)arg2 shared:(BOOL)arg3 options:(unsigned long long)arg4;
+
 @end
 
 @interface AVAudioSession
