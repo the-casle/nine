@@ -68,8 +68,6 @@
             <string>PSGroupCell</string>
             <key>label</key>
             <string>Background</string>
-            <key>footerText</key>
-            <string>Requires different lockscreen/homescreen wallpapers. Prevents nine from adding home wallpaper to background.</string>
         </dict>
         <dict>
             <key>cell</key>
@@ -93,37 +91,9 @@
             <key>defaults</key>
             <string>com.thecasle.nineprefs</string>
             <key>key</key>
-            <string>iconBackgroundDisabled</string>
-            <key>label</key>
-            <string>Disable SpringBoard icons</string>
-            <key>PostNotification</key>
-            <string>com.thecasle.nineprefs/ReloadPrefs</string>
-        </dict>
-        <dict>
-            <key>cell</key>
-            <string>PSSwitchCell</string>
-            <key>default</key>
-            <false/>
-            <key>defaults</key>
-            <string>com.thecasle.nineprefs</string>
-            <key>key</key>
             <string>enableAlwaysBlur</string>
             <key>label</key>
             <string>Persistent blur</string>
-            <key>PostNotification</key>
-            <string>com.thecasle.nineprefs/ReloadPrefs</string>
-        </dict>
-        <dict>
-            <key>cell</key>
-            <string>PSSwitchCell</string>
-            <key>default</key>
-            <false/>
-            <key>defaults</key>
-            <string>com.thecasle.nineprefs</string>
-            <key>key</key>
-            <string>lockBackgroundEnabled</string>
-            <key>label</key>
-            <string>Disable home wallpaper in NC</string>
             <key>PostNotification</key>
             <string>com.thecasle.nineprefs/ReloadPrefs</string>
         </dict>

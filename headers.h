@@ -8,8 +8,6 @@
 
 //extern "C" CFNotificationCenterRef CFNotificationCenterGetDistributedCenter(void);
 
-extern "C" NSUInteger alphaOfBackground;
-
 @interface UIView (copy)
 -(void)_setCornerRadius:(double)arg1;
 -(CGRect) bounds;
@@ -66,6 +64,7 @@ extern "C" NSUInteger alphaOfBackground;
 @end
 
 @interface SBUILegibilityLabel : UIView
+@property (nonatomic, retain) UIFont *font;
 @end
 
 @interface NCNotificationListClearButton : UIView

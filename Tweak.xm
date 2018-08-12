@@ -97,6 +97,8 @@ static id _lockGlyph;
     if(!isUILocked()) isOnCoverSheet = NO;
     if(!isOnLockscreen()){
         ((UIView*)self).hidden = YES;
+        [[%c(SBWallpaperController) sharedInstance] setVariant:1];
+
     }
 }
 
@@ -248,26 +250,8 @@ static void homescreenAppearNotification(CFNotificationCenterRef center, void *o
 %hook NCNotificationCombinedListViewController
 -(BOOL)hasContent{
     BOOL content = %orig;
-
-    NSNotificationCenter* nc = [NSNotificationCenter defaultCenter];
-    
-    BOOL initialUpdated = NO;
-    if(initialUpdated == NO){
-        NSNotificationCenter* nc = [NSNotificationCenter defaultCenter];
-        NSDictionary* userInfo = @{@"content": @(content)};
-        [nc postNotificationName:@"alphaReceived" object:self userInfo:userInfo];
-        initialUpdated = YES;
-    }
-    if(alphaOfBackground != content){
-        NSDictionary* userInfo = @{@"content": @(content)};
-        [nc postNotificationName:@"alphaReceived" object:self userInfo:userInfo];
-        //NSLog(@"nine_TWEAK posting content notification");
-        
-    }
-    BOOL tempBool = self.isShowingNotificationsHistory;
-    //NSLog(@"nine_TWEAK | posting %d",tempBool);
-    NSDictionary* userInfo = @{@"content": @(content), @"history": @(tempBool)};
-    [nc postNotificationName:@"updateTCBackgroundBlur" object:self userInfo:userInfo];
+    // Sending values to the background controller
+    [[TCBackgroundViewController sharedInstance] updateSceenShot: content isRevealed: self.isShowingNotificationsHistory];
     return content;
 }
 %end
@@ -298,7 +282,7 @@ static void homescreenAppearNotification(CFNotificationCenterRef center, void *o
 %property (nonatomic, retain) TCBackgroundViewController *backgroundCont;
 -(id)initWithPageViewControllers:(id)arg1 mainPageContentViewController:(id)arg2{
     if((self = %orig)){
-        self.backgroundCont = [[TCBackgroundViewController alloc] init];
+        self.backgroundCont = [TCBackgroundViewController sharedInstance];
     }
     return self;
 }
@@ -584,14 +568,24 @@ static void homescreenAppearNotification(CFNotificationCenterRef center, void *o
         [self sendSubviewToBack:self.headerEffectView];
     }
     %orig;
-    self.headerEffectView.frame = self.bounds;
     
-    CGPoint center = self.titleLabel.center;
-    center.y = self.bounds.size.height/2;
-    self.titleLabel.center = center;
-    CGPoint center2 = self.clearButton.center;
-    center2.y = self.bounds.size.height/2;
-    self.clearButton.center = center2;
+    
+    if(enableHeaders){
+        self.headerEffectView.frame = self.bounds;
+        self.headerEffectView.frameHeight = self.bounds.size.height - 10;
+        
+        // changing size
+        self.titleLabel.font = [UIFont fontWithName:@".SFUIDisplay" size:22.0];
+        CGPoint center = self.titleLabel.center;
+        center.y = self.headerEffectView.frameHeight/2;
+        self.titleLabel.center = center;
+        CGPoint center2 = self.clearButton.center;
+        center2.y = self.headerEffectView.frameHeight/2;
+        self.clearButton.center = center2;
+    }
+    
+    
+    
 }
 %end
 
