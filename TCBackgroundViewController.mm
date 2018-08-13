@@ -14,7 +14,6 @@ static NSNumber *darkeningValueGeneral;
 
 extern BOOL isOnLockscreen();
 extern BOOL isUILocked();
-static id _instance;
 
 @implementation TCBackgroundViewController {
     SBUIController *_sbCont;
@@ -84,15 +83,20 @@ static id _instance;
         }
         
     }
-    if (_instance == nil) _instance = self;
     return self;
 }
 
 
-+ (id) sharedInstance {
-    if (!_instance) return [[TCBackgroundViewController alloc] init];
-    return _instance;
++ (instancetype)sharedInstance {
+    static TCBackgroundViewController *sharedInstance = nil;
+    static dispatch_once_t onceToken; // onceToken = 0
+    dispatch_once(&onceToken, ^{
+        sharedInstance = [[TCBackgroundViewController alloc] init];
+    });
+    
+    return sharedInstance;
 }
+
 -(void) updateSceenShot: (BOOL)content isRevealed: (BOOL)isHistoryRevealed {
     
     // forces the blur always enabled
@@ -106,16 +110,12 @@ static id _instance;
     if(content == YES && isHistoryRevealed == YES){
         [UIView animateWithDuration:.5
                               delay:0
-                            options:UIViewAnimationOptionCurveEaseIn
+                            options:UIViewAnimationOptionCurveEaseInOut
                          animations:^{self.blurHistoryEffectView.alpha = 1;}
                          completion:nil];
-        [UIView animateWithDuration:.4
-                              delay:0
-                            options:UIViewAnimationOptionCurveEaseOut
-                         animations:^{self.blurEffectView.alpha = 0;}
-                         completion:nil];
+        self.blurEffectView.alpha = 0;
     } else if(content == YES && isHistoryRevealed == NO){
-        [UIView animateWithDuration:1
+        [UIView animateWithDuration:.7
                               delay:0
                             options:UIViewAnimationOptionCurveEaseIn
                          animations:^{self.blurEffectView.alpha = 1;}
