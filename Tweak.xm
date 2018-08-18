@@ -35,7 +35,7 @@ BOOL isOnLockscreen() {
 static id _instance;
 static id _instanceController;
 static id _lockGlyph;
-static id _envWindow = nil;
+//static id _envWindow = nil;
 
 %hook SBFPasscodeLockTrackerForPreventLockAssertions
 - (id) init {
@@ -55,29 +55,30 @@ static id _envWindow = nil;
 %group ClearBackground
 %hook SBCoverSheetUnlockedEnvironmentHostingWindow
 // makes the cover sheet transparent
-
+/*
 -(id) init{
     if((self = %orig)){
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(willHideCoverSheetNotification:) name:@"SBCoverSheetWillDismissNotification" object:nil];
     }
     return self;
 }
+ */
 -(void)setHidden:(BOOL)arg1 {
-    %orig;
-    //if (isOnLockscreen()) %orig;
-    //else %orig(NO);
+    if (isOnLockscreen()) %orig;
+    else %orig(NO);
         //NSLog(@"nine_TWEAK setting hidden");
 }
-
+/*
 -(BOOL)hidden {
     return (isOnLockscreen()) ? %orig : NO;
 }
-
+*/
 -(void)layoutSubviews {
     %orig;
-    if (!_envWindow) _envWindow = self; // save instance
+    //if (!_envWindow) _envWindow = self; // save instance
+    //self.hidden = (isOnLockscreen()) ? NO : YES;
 }
-
+/*
 %new
 -(void) willHideCoverSheetNotification: (NSNotification *)notification {
     if (_envWindow){
@@ -85,7 +86,7 @@ static id _envWindow = nil;
     }
 
 }
-
+*/
 %end
 
 %hook SBCoverSheetPanelBackgroundContainerView
@@ -115,6 +116,7 @@ static id _envWindow = nil;
         [[%c(SBWallpaperController) sharedInstance] setVariant:1];
 
     }
+    NSLog(@"nine_TWEAK coversheet is revealed");
 }
 
 %new
@@ -154,9 +156,11 @@ static void homescreenNotification(CFNotificationCenterRef center, void *observe
         if(isUILocked()){
             isOnCoverSheet = YES;
             [[objc_getClass("SBWallpaperController") sharedInstance] setVariant:0];
+            /*
             if (_envWindow){
                 ((UIWindow*)_envWindow).hidden = YES;
             }
+             */
         }
         
         if(isOnLockscreen() && enableClearBackground){
@@ -218,6 +222,7 @@ static void homescreenAppearNotification(CFNotificationCenterRef center, void *o
 // hide clock && lockglyph && update wallpaper && update envwindow
 -(void)layoutSubviews {
     %orig;
+    //NSLog(@"nine_TWEAK active: %i visible: %i",[[%c(SBLockScreenManager) sharedInstance] isLockScreenActive], [[%c(SBLockScreenManager) sharedInstance] isLockScreenVisible]);
     if (!isOnLockscreen()) {
         [UIView animateWithDuration:.5
                               delay:.2
@@ -226,12 +231,12 @@ static void homescreenAppearNotification(CFNotificationCenterRef center, void *o
                          completion:nil];
         //((UIView*)self).hidden = YES; // maybe make this optional?
         //if (_lockGlyph) ((UIView*)_lockGlyph).hidden = YES;
-        
+        /*
         if (_envWindow){
             ((UIWindow*)_envWindow).hidden = NO;
             
         }
-        
+        */
     }
     else {
         ((UIView*)self).alpha = 1;
@@ -258,9 +263,9 @@ static void homescreenAppearNotification(CFNotificationCenterRef center, void *o
 // checks if the blur is visible when applying the new animation
 -(void)layoutSubviews {
     %orig;
-    if (((SBDashBoardViewController *)((UIView *)self).superview/* some touch thingy */.superview/* SBDashBoardView */._viewDelegate/* SBDashBoardViewController */).backgroundCont/* TCBackgroundController */.blurEffectView.alpha != 0) ((UIView*)self).hidden = YES;
-        else ((UIView*)self).hidden = NO;
-            }
+    if (((SBDashBoardViewController *)((UIView *)self).superview/* some touch thingy */.superview/* SBDashBoardView */._viewDelegate/* SBDashBoardViewController */).backgroundCont/* TCBackgroundController */.blurEffectView.alpha != 0 || ((SBDashBoardViewController *)((UIView *)self).superview/* some touch thingy */.superview/* SBDashBoardView */._viewDelegate/* SBDashBoardViewController */).backgroundCont/* TCBackgroundController */.blurHistoryEffectView.alpha != 0) ((UIView*)self).hidden = YES;
+    else ((UIView*)self).hidden = NO;
+}
 %end
 
 %hook NCNotificationCombinedListViewController
@@ -317,23 +322,6 @@ static void homescreenAppearNotification(CFNotificationCenterRef center, void *o
 
 -(void) layoutSubviews{
     %orig;
-    MSHookIvar<UIImageView *>(self, "_shadowView").hidden = YES;
-    
-    //Sets all text to white color
-    [[self _headerContentView] setTintColor:[UIColor whiteColor]];
-    [[[[self _headerContentView] _dateLabel] _layer] setFilters:nil];
-    [[[[self _headerContentView] _titleLabel] _layer] setFilters:nil];
-    for(id object in self.allSubviews){
-        if([object isKindOfClass:%c(NCNotificationContentView)]){
-            [[object _secondaryTextView] setTextColor:[UIColor whiteColor]];
-            [[object _primaryLabel] setTextColor:[UIColor whiteColor]];
-            [[object _primarySubtitleLabel] setTextColor:[UIColor whiteColor]];
-        }
-    }
-    
-    [[self backgroundMaterialView] setHidden:YES];
-    MSHookIvar<MTMaterialView *>(self, "_mainOverlayView").hidden = true;
-    
     // banner check, took a while to get right
     
     //if([[[self _viewControllerForAncestor] view].superview isKindOfClass:%c(UITransitionView)]){
@@ -342,111 +330,159 @@ static void homescreenAppearNotification(CFNotificationCenterRef center, void *o
     }
     if([[[self _viewControllerForAncestor] delegate] isKindOfClass:%c(SBNotificationBannerDestination)]){
         // is a banner
-        self.frameWidth = UIScreen.mainScreen.bounds.size.width;
-        [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
-        UIInterfaceOrientation interfaceOrientation = [[UIApplication sharedApplication] statusBarOrientation];
-        
-        //
-        if (UIDeviceOrientationIsPortrait(interfaceOrientation)) {
-            if(enableBanners && self.frameY != -.5){
-                self.frameHeight += 32;
-            }
-        }
-        [[UIDevice currentDevice] endGeneratingDeviceOrientationNotifications];
-        self.frameY = -.5;
-        
-        CGPoint notifCenter = self.center;
-        notifCenter.x = self.superview.center.x;
-        self.center = notifCenter;
-        
-        if(!self.notifEffectView){
-            UIBlurEffect *blurEffect = [UIBlurEffect effectWithBlurRadius:17];
-            self.notifEffectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
+        if(enableBannerSection){
             
-            // tint color
-            if(enableColorCube){
-                CCColorCube *colorCube = [[CCColorCube alloc] init];
-                UIImage *img = (UIImage *)[[self _headerContentView] icon];
-                UIColor *rgbWhite = [UIColor colorWithRed:1 green:1 blue:1 alpha:1];
-                NSArray *imgColors = [colorCube extractBrightColorsFromImage:img avoidColor:rgbWhite count:4];
-                UIColor *uicolor = [imgColors[0] retain];
-                CGColorRef color = [uicolor CGColor];
-                UIColor *darkenedImgColor = nil;
-                
-                int numComponents = CGColorGetNumberOfComponents(color);
-                
-                if (numComponents == 4)
-                {
-                    const CGFloat *components = CGColorGetComponents(color);
-                    CGFloat red = components[0];
-                    CGFloat green = components[1];
-                    CGFloat blue = components[2];
-                    //CGFloat alpha = components[3];
-                    darkenedImgColor = [UIColor colorWithRed: red - .2 green: green - .2 blue: blue - .2 alpha:1];
+            MSHookIvar<UIImageView *>(self, "_shadowView").hidden = YES;
+            
+            //Sets all text to white color
+            [[self _headerContentView] setTintColor:[UIColor whiteColor]];
+            [[[[self _headerContentView] _dateLabel] _layer] setFilters:nil];
+            [[[[self _headerContentView] _titleLabel] _layer] setFilters:nil];
+            for(id object in self.allSubviews){
+                if([object isKindOfClass:%c(NCNotificationContentView)]){
+                    [[object _secondaryTextView] setTextColor:[UIColor whiteColor]];
+                    [[object _primaryLabel] setTextColor:[UIColor whiteColor]];
+                    [[object _primarySubtitleLabel] setTextColor:[UIColor whiteColor]];
                 }
-                
-                [uicolor release];
-                
-                
-                self.notifEffectView.backgroundColor = [darkenedImgColor colorWithAlphaComponent:.65];
-            } else {
-                self.notifEffectView.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:.55];
             }
             
+            [[self backgroundMaterialView] setHidden:YES];
+            MSHookIvar<MTMaterialView *>(self, "_mainOverlayView").hidden = true;
             
-            self.notifEffectView.frame = self.bounds;
-            self.notifEffectView.frameX = 0;
-            self.notifEffectView.frameWidth = UIScreen.mainScreen.bounds.size.width;
-            
-            self.notifEffectView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-            
-            [self addSubview:self.notifEffectView];
-            [self sendSubviewToBack:self.notifEffectView];
-        }
-        
-        if(!self.pullTab && enableGrabber == YES){
-            self.pullTab = [[UIView alloc] initWithFrame:self.notifEffectView.frame];
-            
-            self.pullTab.frameHeight = 4;
-            self.pullTab.frameWidth = 34;
-            self.pullTab.frameX = (UIScreen.mainScreen.bounds.size.width / 2) - (self.pullTab.frameWidth / 2);
-            
+            self.frameWidth = UIScreen.mainScreen.bounds.size.width;
             [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
             UIInterfaceOrientation interfaceOrientation = [[UIApplication sharedApplication] statusBarOrientation];
-            if(enableBanners){
-                if (UIDeviceOrientationIsPortrait(interfaceOrientation))
-                {
-                    //self.pullTab.frameY = self.notifEffectView.bounds.size.height + 23;
-                    self.pullTab.frameY = self.notifEffectView.bounds.size.height - 9;
+            
+            //
+            if (UIDeviceOrientationIsPortrait(interfaceOrientation)) {
+                if(enableBanners && self.frameY != -.5){
+                    self.frameHeight += 32;
+                }
+            }
+            [[UIDevice currentDevice] endGeneratingDeviceOrientationNotifications];
+            self.frameY = -.5;
+            
+            CGPoint notifCenter = self.center;
+            notifCenter.x = self.superview.center.x;
+            self.center = notifCenter;
+            
+            if(!self.notifEffectView){
+                UIBlurEffect *blurEffect = [UIBlurEffect effectWithBlurRadius:17];
+                self.notifEffectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
+                
+                // tint color
+                if(enableColorCube){
+                    CCColorCube *colorCube = [[CCColorCube alloc] init];
+                    UIImage *img = (UIImage *)[[self _headerContentView] icon];
+                    UIColor *rgbWhite = [UIColor colorWithRed:1 green:1 blue:1 alpha:1];
+                    NSArray *imgColors = [colorCube extractBrightColorsFromImage:img avoidColor:rgbWhite count:4];
+                    UIColor *uicolor = [imgColors[0] retain];
+                    CGColorRef color = [uicolor CGColor];
+                    UIColor *darkenedImgColor = nil;
+                    
+                    int numComponents = CGColorGetNumberOfComponents(color);
+                    
+                    if (numComponents == 4)
+                    {
+                        const CGFloat *components = CGColorGetComponents(color);
+                        CGFloat red = components[0];
+                        CGFloat green = components[1];
+                        CGFloat blue = components[2];
+                        //CGFloat alpha = components[3];
+                        darkenedImgColor = [UIColor colorWithRed: red - .2 green: green - .2 blue: blue - .2 alpha:1];
+                    }
+                    
+                    [uicolor release];
+                    
+                    
+                    self.notifEffectView.backgroundColor = [darkenedImgColor colorWithAlphaComponent:.65];
+                } else {
+                    self.notifEffectView.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:.55];
+                }
+                
+                
+                self.notifEffectView.frame = self.bounds;
+                self.notifEffectView.frameX = 0;
+                self.notifEffectView.frameWidth = UIScreen.mainScreen.bounds.size.width;
+                
+                self.notifEffectView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+                
+                [self addSubview:self.notifEffectView];
+                [self sendSubviewToBack:self.notifEffectView];
+            }
+            
+            if(!self.pullTab && enableGrabber == YES){
+                self.pullTab = [[UIView alloc] initWithFrame:self.notifEffectView.frame];
+                
+                self.pullTab.frameHeight = 4;
+                self.pullTab.frameWidth = 34;
+                self.pullTab.frameX = (UIScreen.mainScreen.bounds.size.width / 2) - (self.pullTab.frameWidth / 2);
+                
+                [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
+                UIInterfaceOrientation interfaceOrientation = [[UIApplication sharedApplication] statusBarOrientation];
+                if(enableBanners){
+                    if (UIDeviceOrientationIsPortrait(interfaceOrientation))
+                    {
+                        //self.pullTab.frameY = self.notifEffectView.bounds.size.height + 23;
+                        self.pullTab.frameY = self.notifEffectView.bounds.size.height - 9;
+                    } else {
+                        self.pullTab.frameY = self.notifEffectView.bounds.size.height - 9;
+                    }
                 } else {
                     self.pullTab.frameY = self.notifEffectView.bounds.size.height - 9;
                 }
-            } else {
-                self.pullTab.frameY = self.notifEffectView.bounds.size.height - 9;
+                [[UIDevice currentDevice] endGeneratingDeviceOrientationNotifications];
+                
+                
+                self.pullTab.backgroundColor = [UIColor whiteColor];
+                [self.pullTab _setCornerRadius:2];
+                [self addSubview:self.pullTab];
             }
-            [[UIDevice currentDevice] endGeneratingDeviceOrientationNotifications];
             
+            self.singleLine.hidden = YES;
             
-            self.pullTab.backgroundColor = [UIColor whiteColor];
-            [self.pullTab _setCornerRadius:2];
-            [self addSubview:self.pullTab];
+            if(enableIconRemove == YES){
+                MTPlatterHeaderContentView *header = [self _headerContentView];
+                header.iconButton.hidden = YES;
+                CGRect headerFrame = ((UILabel *)[header _titleLabel]).frame;
+                headerFrame.origin.x = -13;
+                ((UILabel *)[header _titleLabel]).frame = headerFrame;
+                
+            }
         }
-        
-        self.singleLine.hidden = YES;
-        
-        if(enableIconRemove == YES){
-            MTPlatterHeaderContentView *header = [self _headerContentView];
-            header.iconButton.hidden = YES;
-            CGRect headerFrame = ((UILabel *)[header _titleLabel]).frame;
-            headerFrame.origin.x = -13;
-            ((UILabel *)[header _titleLabel]).frame = headerFrame;
-            
-        }
-        
-        
-        
     } else {
         // not a banner
+        /*
+        UIColor *bottomColor = [UIColor blueColor];
+        
+        // Create the gradient
+        CAGradientLayer *theViewGradient = [CAGradientLayer layer];
+        theViewGradient.colors = [NSArray arrayWithObjects: [UIColor clearColor], (id)bottomColor.CGColor, [UIColor clearColor], nil];
+        theViewGradient.locations = [NSArray arrayWithObjects: [NSNumber numberWithDouble: .05], [NSNumber numberWithDouble: 0.9], [NSNumber numberWithDouble: 0.05], [NSNumber numberWithDouble: 1], nil];
+        theViewGradient.startPoint = CGPointMake(0.0, 0.5);
+        theViewGradient.endPoint = CGPointMake(1.0, 0.5);
+        theViewGradient.frame = self.bounds;
+        
+        //Add gradient to view
+        self.layer.mask = theViewGradient;
+        */
+        
+        MSHookIvar<UIImageView *>(self, "_shadowView").hidden = YES;
+        
+        //Sets all text to white color
+        [[self _headerContentView] setTintColor:[UIColor whiteColor]];
+        [[[[self _headerContentView] _dateLabel] _layer] setFilters:nil];
+        [[[[self _headerContentView] _titleLabel] _layer] setFilters:nil];
+        for(id object in self.allSubviews){
+            if([object isKindOfClass:%c(NCNotificationContentView)]){
+                [[object _secondaryTextView] setTextColor:[UIColor whiteColor]];
+                [[object _primaryLabel] setTextColor:[UIColor whiteColor]];
+                [[object _primarySubtitleLabel] setTextColor:[UIColor whiteColor]];
+            }
+        }
+        
+        [[self backgroundMaterialView] setHidden:YES];
+        MSHookIvar<MTMaterialView *>(self, "_mainOverlayView").hidden = true;
         
         BOOL rotationCheckLandscape = NO;
         [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
@@ -488,7 +524,7 @@ static void homescreenAppearNotification(CFNotificationCenterRef center, void *o
     %orig;
     [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
     UIInterfaceOrientation interfaceOrientation = [[UIApplication sharedApplication] statusBarOrientation];
-    if (UIDeviceOrientationIsPortrait(interfaceOrientation))
+    if (UIDeviceOrientationIsPortrait(interfaceOrientation) && enableBannerSection)
     {
         if([[[self _viewControllerForAncestor] view].superview isKindOfClass:%c(UITransitionView)]){
             for(id object in self.allSubviews){
@@ -621,7 +657,8 @@ static void homescreenAppearNotification(CFNotificationCenterRef center, void *o
 
 %hook _NCNotificationViewControllerView
 -(void) layoutSubviews{
-    if(![[self.contentView _viewControllerForAncestor] respondsToSelector:@selector(delegate)]){
+    if(![[self.contentView _viewControllerForAncestor] respondsToSelector:@selector(delegate)] || !enableBannerSection){
+        %orig;
         return;
     }
     if([[[self.contentView _viewControllerForAncestor] delegate] isKindOfClass:%c(SBNotificationBannerDestination)]){

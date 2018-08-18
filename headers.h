@@ -150,6 +150,7 @@
 
 @interface SBLockScreenManager
 +(id)sharedInstance;
+@property (readonly) BOOL isLockScreenActive;
 @property (readonly) BOOL isLockScreenVisible;
 @property (readonly) BOOL isUILocked;
 -(BOOL)isUIUnlocking;
