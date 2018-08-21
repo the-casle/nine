@@ -37,8 +37,8 @@ extern BOOL isUILocked();
                                      @"enableAlwaysBlur": @NO,
                                      @"historyBlurValue": @15,
                                      @"generalBlurValue": @12,
-                                     @"generalDarkeningValue":@2,
-                                     @"historyDarkeningValue":@6,
+                                     @"generalDarkeningValue":@1,
+                                     @"historyDarkeningValue":@4,
                                      }];
         alwaysBlurEnabled = [settings boolForKey:@"enableAlwaysBlur"];
         blurValueHistory = [NSNumber numberWithDouble: [settings doubleForKey:@"historyBlurValue"]];
@@ -108,13 +108,16 @@ extern BOOL isUILocked();
     }
 
     if(content == YES && isHistoryRevealed == YES){
-        [UIView animateWithDuration:.5
+        // Notification Center
+        /*[UIView animateWithDuration:.5
                               delay:0
                             options:UIViewAnimationOptionCurveEaseInOut
                          animations:^{self.blurHistoryEffectView.alpha = 1;}
-                         completion:nil];
+                         completion:nil];*/
+        self.blurHistoryEffectView.alpha = 1;
         self.blurEffectView.alpha = 0;
     } else if(content == YES && isHistoryRevealed == NO){
+        // lockscreen
         [UIView animateWithDuration:.7
                               delay:0
                             options:UIViewAnimationOptionCurveEaseIn

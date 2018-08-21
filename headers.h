@@ -57,6 +57,7 @@
 -(id) backgroundMaterialView;
 -(id) _headerContentView;
 -(id) _customContentView;
+@property (nonatomic, retain) UIView *backgroundView;
 
 @property (nonatomic, retain) _UITableViewCellSeparatorView *singleLine;
 @property (nonatomic, retain) UIVisualEffectView *notifEffectView;

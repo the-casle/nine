@@ -4,6 +4,11 @@ Depends: mobilesubstrate, ws.hbang.common
 Version: 0.1.1
 Architecture: iphoneos-arm
 Description: Reworks the Notification Center
-Maintainer: Jake Kaslewicz
+ Beta Features:
+ - Clear background
+ - Disable banners (needs testing!)
+ - Revised customization tab
+ - Palette banner support
+Maintainer: Jake Kaslewicz <jakaslewicz@gmail.com>
 Author: Jake Kaslewicz
 Section: Tweaks

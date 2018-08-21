@@ -12,6 +12,10 @@ static BOOL enableColorCube;
 static BOOL enableBannerSection;
 static BOOL enableClearBackground;
 
+// palette
+static BOOL paletteEnabled;
+
+
 BOOL isUILocked() {
     long count = [[[%c(SBFPasscodeLockTrackerForPreventLockAssertions) sharedInstance] valueForKey:@"_assertions"] count];
     if (count == 0) return YES; // array is empty
@@ -224,11 +228,11 @@ static void homescreenAppearNotification(CFNotificationCenterRef center, void *o
     %orig;
     //NSLog(@"nine_TWEAK active: %i visible: %i",[[%c(SBLockScreenManager) sharedInstance] isLockScreenActive], [[%c(SBLockScreenManager) sharedInstance] isLockScreenVisible]);
     if (!isOnLockscreen()) {
-        [UIView animateWithDuration:.5
+        /*[UIView animateWithDuration:.5
                               delay:.2
                             options:UIViewAnimationOptionCurveEaseOut
                          animations:^{((UIView*)self).alpha = 0;}
-                         completion:nil];
+                         completion:nil];*/
         //((UIView*)self).hidden = YES; // maybe make this optional?
         //if (_lockGlyph) ((UIView*)_lockGlyph).hidden = YES;
         /*
@@ -397,7 +401,19 @@ static void homescreenAppearNotification(CFNotificationCenterRef center, void *o
                     
                     self.notifEffectView.backgroundColor = [darkenedImgColor colorWithAlphaComponent:.65];
                 } else {
-                    self.notifEffectView.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:.55];
+                    // Palette banners
+                    if(paletteEnabled && self.backgroundView){
+                        self.notifEffectView.backgroundColor = [UIColor clearColor];
+                        self.backgroundView.frame = self.bounds;
+                        [self.backgroundView _setCornerRadius: 0];
+                        for(id object in self.backgroundView.subviews){
+                            ((UIView *)object).frame = self.bounds;
+                            for(id layer in ((UIView *)object).layer.sublayers){
+                                ((CALayer *)layer).frame = self.bounds;
+                            }
+                        }
+                    }
+                    else self.notifEffectView.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:.55];
                 }
                 
                 
@@ -453,19 +469,48 @@ static void homescreenAppearNotification(CFNotificationCenterRef center, void *o
     } else {
         // not a banner
         /*
-        UIColor *bottomColor = [UIColor blueColor];
+        UIColor *bottomColor = [[UIColor blueColor] colorWithAlphaComponent:.4];
         
         // Create the gradient
-        CAGradientLayer *theViewGradient = [CAGradientLayer layer];
-        theViewGradient.colors = [NSArray arrayWithObjects: [UIColor clearColor], (id)bottomColor.CGColor, [UIColor clearColor], nil];
-        theViewGradient.locations = [NSArray arrayWithObjects: [NSNumber numberWithDouble: .05], [NSNumber numberWithDouble: 0.9], [NSNumber numberWithDouble: 0.05], [NSNumber numberWithDouble: 1], nil];
-        theViewGradient.startPoint = CGPointMake(0.0, 0.5);
-        theViewGradient.endPoint = CGPointMake(1.0, 0.5);
-        theViewGradient.frame = self.bounds;
-        
-        //Add gradient to view
-        self.layer.mask = theViewGradient;
+        if([self respondsToSelector:@selector(backgroundView)]){
+            CALayer *maskView = [[CALayer alloc] init];
+            maskView.frame = self.backgroundView.bounds;
+            
+            CAGradientLayer *theVertGradient = [CAGradientLayer layer];
+            theVertGradient.colors = [NSArray arrayWithObjects: [UIColor clearColor], (id)bottomColor.CGColor, (id)bottomColor.CGColor, [UIColor clearColor], nil];
+            theVertGradient.locations = [NSArray arrayWithObjects: [NSNumber numberWithDouble: .000], [NSNumber numberWithDouble: 0.3], [NSNumber numberWithDouble: 0.7],[NSNumber numberWithDouble: 1], [NSNumber numberWithDouble: 1], nil];
+            theVertGradient.startPoint = CGPointMake(0.5, 0.0);
+            theVertGradient.endPoint = CGPointMake(0.5, 1.0);
+            theVertGradient.frame = self.backgroundView.bounds;
+            /*
+            CAGradientLayer *theHorzGradient = [CAGradientLayer layer];
+            theHorzGradient.colors = [NSArray arrayWithObjects: [UIColor clearColor], (id)bottomColor.CGColor, [UIColor clearColor], nil];
+            theHorzGradient.locations = [NSArray arrayWithObjects: [NSNumber numberWithDouble: .005], [NSNumber numberWithDouble: 0.75], [NSNumber numberWithDouble: 1], [NSNumber numberWithDouble: 1], nil];
+            theHorzGradient.startPoint = CGPointMake(0.0, 0.5);
+            theHorzGradient.endPoint = CGPointMake(1.0, 0.5);
+            theHorzGradient.frame = self.backgroundView.bounds;
+            */
+            //[maskView addSublayer:theVertGradient];
+            //[maskView addSublayer:theHorzGradient];
+            /*
+            UIGraphicsBeginImageContextWithOptions(maskView.bounds.size, NO, 0.0);
+            [maskView renderInContext: UIGraphicsGetCurrentContext()];
+            UIImage *layerImage = UIGraphicsGetImageFromCurrentImageContext();
+            UIGraphicsEndImageContext();
+            maskView.contents = (id) layerImage.CGImage;
+            maskView.sublayers = nil;
+            */
+            /*
+            //Add gradient to view
+            self.backgroundView.layer.mask = theVertGradient;
+            self.backgroundView.alpha = 1;
+        }
         */
+        
+        if(self.backgroundView){
+            self.backgroundView.hidden = YES;
+        }
+        
         
         MSHookIvar<UIImageView *>(self, "_shadowView").hidden = YES;
         
@@ -783,6 +828,9 @@ static void homescreenAppearNotification(CFNotificationCenterRef center, void *o
     enableBannerSection = [settings boolForKey:@"bannerSectionEnabled"];
     enableClearBackground = [settings boolForKey:@"clearBackgroundEnabled"];
     
+    if([[NSFileManager defaultManager] fileExistsAtPath: @"/Library/MobileSubstrate/DynamicLibraries/Palette.dylib"]){
+        paletteEnabled = YES;
+    }
     if(tweakEnabled) {
         %init;
     }

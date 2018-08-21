@@ -38,7 +38,7 @@
             <key>cellClass</key>
             <string>HBDiscreteSliderTableCell</string>
             <key>default</key>
-            <real>2</real>
+            <real>1</real>
             <key>defaults</key>
             <string>com.thecasle.nineprefs</string>
             <key>showValue</key>
@@ -84,7 +84,7 @@
             <key>cellClass</key>
             <string>HBDiscreteSliderTableCell</string>
             <key>default</key>
-            <real>6</real>
+            <real>4</real>
             <key>defaults</key>
             <string>com.thecasle.nineprefs</string>
             <key>showValue</key>
