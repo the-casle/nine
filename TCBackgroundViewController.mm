@@ -24,7 +24,9 @@ extern BOOL isUILocked();
         CGRect frame = UIScreen.mainScreen.bounds;
         frame.size.width = (frame.size.width > frame.size.height) ? frame.size.width : frame.size.height;
         frame.size.height = (frame.size.width > frame.size.height) ? frame.size.width : frame.size.height;
-        //frame.origin.y = -100;
+        //frame.size.height += 200;
+
+        
 
         CGRect screenFrame = UIScreen.mainScreen.bounds;
 
@@ -55,6 +57,7 @@ extern BOOL isUILocked();
         if(!self.blurView){
             self.blurView = [[UIView alloc] initWithFrame:frame];
             [self.view addSubview:self.blurView];
+            //self.blurView.frameY = -200;
         }
         
         // NC blur
