@@ -16,6 +16,7 @@ static BOOL enableClearBackground;
 static BOOL paletteEnabled;
 
 
+
 BOOL isUILocked() {
     long count = [[[%c(SBFPasscodeLockTrackerForPreventLockAssertions) sharedInstance] valueForKey:@"_assertions"] count];
     if (count == 0) return YES; // array is empty
@@ -27,10 +28,15 @@ BOOL isUILocked() {
 }
 
 static BOOL isOnCoverSheet; // according to the darwin notifications (the "raw data" that needs comparison)
+static long long _dismissalSlidingMode; // checking if off of lockscreen
 
 BOOL isOnLockscreen() {
     //NSLog(@"nine_TWEAK | %d", isOnCoverSheet);
-    if(isUILocked()) return YES;
+    if(isUILocked()){
+        isOnCoverSheet = YES; // This is used to catch an exception where it was locked, but it the isOnCoverSheet didnt update to reflect.
+        return YES;
+    }
+    
     else if(!isUILocked() && isOnCoverSheet == YES) return YES;
     else if(!isUILocked() && isOnCoverSheet == NO) return NO;
     else return NO;
@@ -39,6 +45,7 @@ BOOL isOnLockscreen() {
 static id _instance;
 static id _instanceController;
 static id _lockGlyph;
+static id _container;
 //static id _envWindow = nil;
 
 %hook SBFPasscodeLockTrackerForPreventLockAssertions
@@ -93,17 +100,58 @@ static id _lockGlyph;
 */
 %end
 
+// Checking if no longer on lockscreen, actually works perfectly
+%hook SBCoverSheetSlidingViewController
+- (void)_finishTransitionToPresented:(_Bool)arg1 animated:(_Bool)arg2 withCompletion:(id)arg3 {
+    if((arg1 == 0) && (_dismissalSlidingMode == 1)){
+        if(!isUILocked()) isOnCoverSheet = NO;
+    } else if ((arg1 == 1) && (_dismissalSlidingMode == 1)){
+        if(isUILocked()) isOnCoverSheet = YES;
+    }
+   // NSLog(@"nine_TWEAK | updating info %i and %lli", arg1, _dismissalSlidingMode);
+    %orig;
+}
+
+- (long long)dismissalSlidingMode {
+    _dismissalSlidingMode = %orig;
+    
+    if(isUILocked())[[objc_getClass("SBWallpaperController") sharedInstance] setVariant:0];
+    if(!isOnLockscreen())[[%c(SBWallpaperController) sharedInstance] setVariant:1];
+    
+    NSLog(@"nine_TWEAK | updating info %i with %i", isOnLockscreen(), isOnCoverSheet);
+    if(isOnLockscreen()){
+        ((UIView*)[%c(SBCoverSheetPanelBackgroundContainerView) sharedInstance]).hidden = NO;
+        if([[%c(SBCoverSheetUnlockedEnvironmentHostingViewController) sharedInstance] respondsToSelector:@selector(maskingView)])((SBCoverSheetUnlockedEnvironmentHostingViewController *)[%c(SBCoverSheetUnlockedEnvironmentHostingViewController) sharedInstance]).maskingView.hidden = NO; /*This is 11.1 only I believe*/
+    } else if(!isOnLockscreen()){
+        ((UIView*)[%c(SBCoverSheetPanelBackgroundContainerView) sharedInstance]).hidden = YES;
+        if([[%c(SBCoverSheetUnlockedEnvironmentHostingViewController) sharedInstance] respondsToSelector:@selector(maskingView)])((SBCoverSheetUnlockedEnvironmentHostingViewController *)[%c(SBCoverSheetUnlockedEnvironmentHostingViewController) sharedInstance]).maskingView.hidden = YES; /*This is 11.1 only I believe*/
+    }
+    
+    return %orig;
+}
+%end
+
 %hook SBCoverSheetPanelBackgroundContainerView
 // removes the animation when opening cover sheet
 
 -(id) init{
     if((self = %orig)){
         // SBLockScreenUIWillLockNotification possibly
-        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(didLockNotification:) name:@"SBFDeviceBlockStateDidChangeNotification" object:nil];
-        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(didHideCoverSheetNotification:) name:/*@"SBCoverSheetDidDismissNotification"*/@"SBCoverSheetWillPresentNotification" object:nil];
+        //[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(didLockNotification:) name:@"SBFDeviceBlockStateDidChangeNotification" object:nil];
+        //[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(didHideCoverSheetNotification:) name:/*@"SBCoverSheetDidDismissNotification"*/@"SBCoverSheetWillPresentNotification" object:nil];
+        
     }
-    return self;
+    if (_container == nil) _container = self;
+        else %orig; // just in case it needs more than one instance
+    return _container;
 }
+%new
+// add a shared instance so we can use it later
++ (id) sharedInstance {
+    if (!_container) return [[%c(SBCoverSheetUnlockedEnvironmentHostingViewController) alloc] init];
+    return _container;
+}
+/*
 -(void)layoutSubviews{
     %orig;
     if(!isOnLockscreen()){
@@ -114,7 +162,7 @@ static id _lockGlyph;
 
 %new
 -(void) didHideCoverSheetNotification: (NSNotification *)notification {
-    if(!isUILocked()) isOnCoverSheet = NO;
+    //if(!isUILocked()) isOnCoverSheet = NO;
     if(!isOnLockscreen()){
         ((UIView*)self).hidden = YES;
         [[%c(SBWallpaperController) sharedInstance] setVariant:1];
@@ -129,6 +177,7 @@ static id _lockGlyph;
         ((UIView*)self).hidden = NO;
     }
 }
+ */
 %end
 
 %hook NCNotificationListSectionRevealHintView
@@ -158,21 +207,21 @@ static void homescreenNotification(CFNotificationCenterRef center, void *observe
     
     if ([lockState isEqualToString:@"com.apple.springboard.DeviceLockStatusChanged"]) {
         if(isUILocked()){
-            isOnCoverSheet = YES;
-            [[objc_getClass("SBWallpaperController") sharedInstance] setVariant:0];
+            //isOnCoverSheet = YES;
+            //[[objc_getClass("SBWallpaperController") sharedInstance] setVariant:0];
             /*
             if (_envWindow){
                 ((UIWindow*)_envWindow).hidden = YES;
             }
              */
         }
-        
+        /*
         if(isOnLockscreen() && enableClearBackground){
             
             if([[%c(SBCoverSheetUnlockedEnvironmentHostingViewController) sharedInstance] respondsToSelector:@selector(maskingView)])((SBCoverSheetUnlockedEnvironmentHostingViewController *)[%c(SBCoverSheetUnlockedEnvironmentHostingViewController) sharedInstance]).maskingView.hidden = NO; /*This is 11.1 only I believe*/
             // masking view doesnt exist. Try hiding the icons and only reveal when its dismissing the coversheet ???
             
-        }
+        //}
     }
 }
 static void homescreenAppearNotification(CFNotificationCenterRef center, void *observer, CFStringRef name, const void *object, CFDictionaryRef userInfo) {
@@ -181,9 +230,9 @@ static void homescreenAppearNotification(CFNotificationCenterRef center, void *o
     
     if ([lockState isEqualToString:@"com.apple.springboard.homescreenunlocked"]) {
         //isOnCoverSheet = NO;
-        if(!isOnLockscreen())[[%c(SBWallpaperController) sharedInstance] setVariant:1];
+        //if(!isOnLockscreen())[[%c(SBWallpaperController) sharedInstance] setVariant:1];
         
-        if(enableClearBackground && [[%c(SBCoverSheetUnlockedEnvironmentHostingViewController) sharedInstance] respondsToSelector:@selector(maskingView)])((SBCoverSheetUnlockedEnvironmentHostingViewController *)[%c(SBCoverSheetUnlockedEnvironmentHostingViewController) sharedInstance]).maskingView.hidden = YES; /*This is 11.1 only I believe*/
+        //if(enableClearBackground && [[%c(SBCoverSheetUnlockedEnvironmentHostingViewController) sharedInstance] respondsToSelector:@selector(maskingView)])((SBCoverSheetUnlockedEnvironmentHostingViewController *)[%c(SBCoverSheetUnlockedEnvironmentHostingViewController) sharedInstance]).maskingView.hidden = YES; /*This is 11.1 only I believe*/
     }
 }
 
@@ -300,6 +349,22 @@ static void homescreenAppearNotification(CFNotificationCenterRef center, void *o
     %orig;
     MSHookIvar<MTMaterialView *>(self, "_backgroundView").hidden = true;
     MSHookIvar<MTMaterialView *>(self, "_mainOverlayView").hidden = true;
+}
+%end
+*/
+/*
+%hook SBPagedScrollView
+-(void) setFrame:(CGRect) frame{
+    frame.origin.y = -175;
+    frame.size.height += 175;
+    %orig(frame);
+}
+%end
+
+%hook NCNotificationListCollectionView
+-(void) setFrame:(CGRect) frame{
+    frame.size.height += 175;
+    %orig(frame);
 }
 %end
 */
