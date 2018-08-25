@@ -27,8 +27,7 @@ BOOL isUILocked() {
     else return NO;
 }
 
-static BOOL isOnCoverSheet; // according to the darwin notifications (the "raw data" that needs comparison)
-static long long _dismissalSlidingMode; // checking if off of lockscreen
+static BOOL isOnCoverSheet; // the data that needs to be analyzed
 
 BOOL isOnLockscreen() {
     //NSLog(@"nine_TWEAK | %d", isOnCoverSheet);
@@ -36,7 +35,6 @@ BOOL isOnLockscreen() {
         isOnCoverSheet = YES; // This is used to catch an exception where it was locked, but it the isOnCoverSheet didnt update to reflect.
         return YES;
     }
-    
     else if(!isUILocked() && isOnCoverSheet == YES) return YES;
     else if(!isUILocked() && isOnCoverSheet == NO) return NO;
     else return NO;
@@ -66,9 +64,9 @@ static id _container;
 // Setting isOnCoverSheet properly, actually works perfectly
 %hook SBCoverSheetSlidingViewController
 - (void)_finishTransitionToPresented:(_Bool)arg1 animated:(_Bool)arg2 withCompletion:(id)arg3 {
-    if((arg1 == 0) && (_dismissalSlidingMode == 1)){
+    if((arg1 == 0) && ([self dismissalSlidingMode] == 1)){
         if(!isUILocked()) isOnCoverSheet = NO;
-    } else if ((arg1 == 1) && (_dismissalSlidingMode == 1)){
+    } else if ((arg1 == 1) && ([self dismissalSlidingMode] == 1)){
         if(isUILocked()) isOnCoverSheet = YES;
     }
     %orig;
@@ -115,20 +113,22 @@ static id _container;
 
 %hook SBCoverSheetSlidingViewController
 - (long long)dismissalSlidingMode {
-    _dismissalSlidingMode = %orig;
-    
     if(isUILocked())[[objc_getClass("SBWallpaperController") sharedInstance] setVariant:0];
     if(!isOnLockscreen())[[%c(SBWallpaperController) sharedInstance] setVariant:1];
     
-    NSLog(@"nine_TWEAK | updating info %i with %i", isOnLockscreen(), isOnCoverSheet);
+    //NSLog(@"nine_TWEAK | updating info %i with %i", isOnLockscreen(), isOnCoverSheet);
     if(isOnLockscreen()){
-        ((UIView*)[%c(SBCoverSheetPanelBackgroundContainerView) sharedInstance]).hidden = NO;
+        ((UIView*)[%c(SBCoverSheetPanelBackgroundContainerView) sharedInstance]).alpha = 1;
         if([[%c(SBCoverSheetUnlockedEnvironmentHostingViewController) sharedInstance] respondsToSelector:@selector(maskingView)])((SBCoverSheetUnlockedEnvironmentHostingViewController *)[%c(SBCoverSheetUnlockedEnvironmentHostingViewController) sharedInstance]).maskingView.hidden = NO; /*This is 11.1 only I believe*/
     } else if(!isOnLockscreen()){
-        ((UIView*)[%c(SBCoverSheetPanelBackgroundContainerView) sharedInstance]).hidden = YES;
-        if([[%c(SBCoverSheetUnlockedEnvironmentHostingViewController) sharedInstance] respondsToSelector:@selector(maskingView)])((SBCoverSheetUnlockedEnvironmentHostingViewController *)[%c(SBCoverSheetUnlockedEnvironmentHostingViewController) sharedInstance]).maskingView.hidden = YES; /*This is 11.1 only I believe*/
+        [UIView animateWithDuration:.2
+                              delay:.3
+                            options:UIViewAnimationOptionCurveEaseInOut
+                         animations:^{((UIView*)[%c(SBCoverSheetPanelBackgroundContainerView) sharedInstance]).alpha = 0;}
+                         completion:^(BOOL finished){
+                             if([[%c(SBCoverSheetUnlockedEnvironmentHostingViewController) sharedInstance] respondsToSelector:@selector(maskingView)])((SBCoverSheetUnlockedEnvironmentHostingViewController *)[%c(SBCoverSheetUnlockedEnvironmentHostingViewController) sharedInstance]).maskingView.hidden = YES; /*This is 11.1 only I believe*/
+                         }];
     }
-    
     return %orig;
 }
 %end
@@ -248,6 +248,7 @@ static id _container;
     // Sending values to the background controller
     [[TCBackgroundViewController sharedInstance] updateSceenShot: content isRevealed: ((!isOnLockscreen()) ? YES : self.isShowingNotificationsHistory)]; // NC is never set to lock
     return content;
+
 }
 %end
 /*
@@ -320,10 +321,25 @@ static id _container;
 }
 %end
 */
+
+static NSNumber *priorityQuickCheck = 0; // Used to prevent spam;
+%hook NCNotificationCombinedListViewController
+-(void) _updatePrioritySectionLowestPosition{
+    %orig;
+    [self.view.allSubviews enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop){
+        if([obj isKindOfClass:%c(NCNotificationShortLookView)]){
+            [obj tcUpdateTopLine];
+            priorityQuickCheck = [NSNumber numberWithDouble:self.prioritySectionLowestPosition];
+        }
+        
+    }];
+}
+%end
+
 %hook NCNotificationShortLookView
 %property (nonatomic, retain) _UITableViewCellSeparatorView *singleLine;
+%property (nonatomic, retain) _UITableViewCellSeparatorView *topLine;
 %property (nonatomic, retain) UIVisualEffectView *notifEffectView;
-%property (nonatomic, retain) UIView *pullTab;
 
 -(void) layoutSubviews{
     %orig;
@@ -333,6 +349,9 @@ static id _container;
     if(![[self _viewControllerForAncestor] respondsToSelector:@selector(delegate)]){
         return;
     }
+    
+    NCNotificationGrabberView *grabberView = MSHookIvar<NCNotificationGrabberView *>(self, "_grabberView"); // Grabber used for later;
+    
     if([[[self _viewControllerForAncestor] delegate] isKindOfClass:%c(SBNotificationBannerDestination)]){
         // is a banner
         if(enableBannerSection){
@@ -370,6 +389,7 @@ static id _container;
             CGPoint notifCenter = self.center;
             notifCenter.x = self.superview.center.x;
             self.center = notifCenter;
+            
             
             if(!self.notifEffectView){
                 UIBlurEffect *blurEffect = [UIBlurEffect effectWithBlurRadius:17];
@@ -428,33 +448,11 @@ static id _container;
                 [self sendSubviewToBack:self.notifEffectView];
             }
             
-            if(!self.pullTab && enableGrabber == YES){
-                self.pullTab = [[UIView alloc] initWithFrame:self.notifEffectView.frame];
-                
-                self.pullTab.frameHeight = 4;
-                self.pullTab.frameWidth = 34;
-                self.pullTab.frameX = (UIScreen.mainScreen.bounds.size.width / 2) - (self.pullTab.frameWidth / 2);
-                
-                [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
-                UIInterfaceOrientation interfaceOrientation = [[UIApplication sharedApplication] statusBarOrientation];
-                if(enableBanners){
-                    if (UIDeviceOrientationIsPortrait(interfaceOrientation))
-                    {
-                        //self.pullTab.frameY = self.notifEffectView.bounds.size.height + 23;
-                        self.pullTab.frameY = self.notifEffectView.bounds.size.height - 9;
-                    } else {
-                        self.pullTab.frameY = self.notifEffectView.bounds.size.height - 9;
-                    }
-                } else {
-                    self.pullTab.frameY = self.notifEffectView.bounds.size.height - 9;
-                }
-                [[UIDevice currentDevice] endGeneratingDeviceOrientationNotifications];
-                
-                
-                self.pullTab.backgroundColor = [UIColor whiteColor];
-                [self.pullTab _setCornerRadius:2];
-                [self addSubview:self.pullTab];
+            // enable built in grabber and coloring
+            if(enableGrabber == YES){
+                grabberView.pill.backgroundColor = [[UIColor whiteColor] colorWithAlphaComponent:.6];
             }
+            grabberView.hidden = enableGrabber ? NO : YES;
             
             self.singleLine.hidden = YES;
             
@@ -512,7 +510,6 @@ static id _container;
             self.backgroundView.hidden = YES;
         }
         
-        
         MSHookIvar<UIImageView *>(self, "_shadowView").hidden = YES;
         
         //Sets all text to white color
@@ -544,6 +541,32 @@ static id _container;
         } else {
             self.frameWidth = UIScreen.mainScreen.bounds.size.width - ((UIScreen.mainScreen.bounds.size.width - self.superview.frame.size.width) / 2);
         }
+        
+        grabberView.hidden = YES;
+        
+        if(!self.topLine){
+            
+            self.topLine.drawsWithVibrantLightMode = NO;
+            self.topLine = [[%c(_UITableViewCellSeparatorView) alloc] initWithFrame:self.frame];
+            UIBlurEffect *effect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleDark];
+            UIVibrancyEffect *vibEffect = [UIVibrancyEffect effectForBlurEffect:effect];
+            [self.topLine setSeparatorEffect:vibEffect];
+            self.topLine.alpha = .45;
+            
+            [self addSubview:self.topLine];
+            
+        }
+        self.topLine.frameHeight = .5;
+        self.topLine.frameX = 12;
+        
+        if(!enableExtend || rotationCheckLandscape == YES){
+            self.topLine.frameWidth = self.frame.size.width - 17;
+        } else {
+            self.topLine.frameWidth = self.frame.size.width - 12;
+        }
+        self.topLine.frameY = -7;
+        
+        [self tcUpdateTopLine];
         
         if(!self.singleLine){
             
@@ -587,7 +610,29 @@ static id _container;
     [[UIDevice currentDevice] endGeneratingDeviceOrientationNotifications];
     
 }
+
+%new
+-(void) tcUpdateTopLine{
+    if([self._viewControllerForAncestor respondsToSelector:@selector(delegate)]){
+        if([((NCNotificationCombinedListViewController *)((NCNotificationShortLookViewController *)self._viewControllerForAncestor).delegate).notificationPriorityList.requests firstObject] == ((NCNotificationShortLookViewController *)self._viewControllerForAncestor).notificationRequest){
+            self.topLine.alpha = 0;
+            self.topLine.hidden = NO;
+            [UIView animateWithDuration:.3
+                                  delay:0
+                                options:UIViewAnimationOptionCurveEaseInOut
+                             animations:^{self.topLine.alpha = .45;}
+                             completion:nil];
+        } else {
+            self.topLine.hidden = YES;
+        }
+    }
+}
+
+-(BOOL)_shouldShowGrabber {
+    return enableBannerSection ? YES : %orig;
+}
 %end
+
 /*
 %hook _NCNotificationViewControllerView
 -(void) setContentView{
@@ -667,7 +712,6 @@ static id _container;
     }
     %orig;
     
-    
     if(enableHeaders){
         self.headerEffectView.frame = self.bounds;
         self.headerEffectView.frameHeight = self.bounds.size.height - 10;
@@ -681,9 +725,6 @@ static id _container;
         center2.y = self.headerEffectView.frameHeight/2;
         self.clearButton.center = center2;
     }
-    
-    
-    
 }
 %end
 
@@ -765,7 +806,7 @@ static id _container;
 
 // Posting all notifications :)
 
-
+/*
 %hookf(uint32_t, notify_post, const char *name) {
     uint32_t r = %orig;
     //if (strstr(name, "notification")) {
@@ -781,6 +822,7 @@ static id _container;
                 NSLog(@"NOTI_MON: %@", notiName);
             //}
 }
+ */
 /*
 %ctor{
  [[NSNotificationCenter defaultCenter] addObserverForName:NULL object:NULL queue:NULL usingBlock:^(NSNotification *note) {
@@ -834,18 +876,17 @@ static id _container;
     }
     if(tweakEnabled) {
         %init;
+        if(enableClearBackground) {
+            %init(ClearBackground);
+        }
     }
-    if(enableClearBackground) {
-        %init(ClearBackground);
-    }
-    
+    /*
     [[NSNotificationCenter defaultCenter] addObserverForName:NULL object:NULL queue:NULL usingBlock:^(NSNotification *note) {
         if ([note.name containsString:@"UIViewAnimationDidCommitNotification"] || [note.name containsString:@"UIViewAnimationDidStopNotification"] || [note.name containsString:@"UIScreenBrightnessDidChangeNotification"]){
         } else {
             NSLog(@"UNIQUE: %@", note.name);
         }
     }];
-    
-    
+    */
 }
 

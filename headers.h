@@ -60,8 +60,10 @@
 @property (nonatomic, retain) UIView *backgroundView;
 
 @property (nonatomic, retain) _UITableViewCellSeparatorView *singleLine;
+@property (nonatomic, retain) _UITableViewCellSeparatorView *topLine;
 @property (nonatomic, retain) UIVisualEffectView *notifEffectView;
-@property (nonatomic, retain) UIView *pullTab;
+
+-(void) tcUpdateTopLine;
 @end
 
 @interface SBUILegibilityLabel : UIView
@@ -106,9 +108,14 @@
 @interface NCNotificationListViewController : UICollectionViewController
 @end
 
+@interface NCNotificationPriorityList
+@property (nonatomic,retain) NSMutableOrderedSet * requests;
+@end
+
 @interface NCNotificationCombinedListViewController : NCNotificationListViewController
 @property (assign,nonatomic) double prioritySectionLowestPosition;
 @property (assign,getter=isShowingNotificationsHistory,nonatomic) BOOL showingNotificationsHistory;
+@property (nonatomic,retain) NCNotificationPriorityList * notificationPriorityList;
 -(void)forceNotificationHistoryRevealed:(BOOL)arg1 animated:(BOOL)arg2;
 - (NCNotificationListCollectionView *)_scrollView;
 -(BOOL) hasContent;
@@ -121,9 +128,18 @@
 
 @end
 
+@interface NCNotificationRequest
+
+@end
+
+@interface NCNotificationGrabberView : UIView
+@property (nonatomic, retain) UIView *pill;
+@end
+
 @interface NCNotificationShortLookViewController : UIViewController
 -(id) delegate;
 @property (nonatomic, retain) NCNotificationListCell *associatedView;
+@property (nonatomic, retain) NCNotificationRequest *notificationRequest;
 @end
 
 @interface _NCNotificationViewControllerView : UIView
@@ -241,7 +257,10 @@
 @end
 
 @interface SBCoverSheetPanelBackgroundContainerView : UIView
+@end
 
+@interface SBCoverSheetSlidingViewController
+- (long long)dismissalSlidingMode;
 @end
 
 @interface SBCoverSheetPrimarySlidingViewController
