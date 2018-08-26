@@ -145,7 +145,20 @@
             <key>PostNotification</key>
             <string>com.thecasle.nineprefs/ReloadPrefs</string>
         </dict>
-        
+        <dict>
+            <key>cell</key>
+            <string>PSSwitchCell</string>
+            <key>default</key>
+            <true/>
+            <key>defaults</key>
+            <string>com.thecasle.nineprefs</string>
+            <key>key</key>
+            <string>separatorsEnabled</string>
+            <key>label</key>
+            <string>Enable separators</string>
+            <key>PostNotification</key>
+            <string>com.thecasle.nineprefs/ReloadPrefs</string>
+        </dict>
         <dict>
             <key>cell</key>
             <string>PSSwitchCell</string>

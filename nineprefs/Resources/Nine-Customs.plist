@@ -64,7 +64,7 @@
             <key>cellClass</key>
             <string>HBStepperTableCell</string>
             <key>default</key>
-            <real>15</real>
+            <real>20</real>
             <key>defaults</key>
             <string>com.thecasle.nineprefs</string>
             <key>key</key>

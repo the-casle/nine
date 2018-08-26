@@ -37,7 +37,7 @@ extern BOOL isUILocked();
         HBPreferences *settings = [[HBPreferences alloc] initWithIdentifier:@"com.thecasle.nineprefs"];
         [settings registerDefaults:@{
                                      @"enableAlwaysBlur": @NO,
-                                     @"historyBlurValue": @15,
+                                     @"historyBlurValue": @20,
                                      @"generalBlurValue": @12,
                                      @"generalDarkeningValue":@1,
                                      @"historyDarkeningValue":@4,
@@ -62,6 +62,7 @@ extern BOOL isUILocked();
         
         // NC blur
         if(!self.blurHistoryEffectView){
+            
             UIBlurEffect *blurEffect = [UIBlurEffect effectWithBlurRadius:blurValueHistory.doubleValue];
             self.blurHistoryEffectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
             self.blurHistoryEffectView.frame = frame;
@@ -69,7 +70,19 @@ extern BOOL isUILocked();
             
             self.blurEffectView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
             
+            
+            // adding saturation
+            
+            
             [self.blurView addSubview:self.blurHistoryEffectView];
+            /*
+            _UIBackdropView *blurView = [[_UIBackdropView alloc] initWithStyle:2060];
+            //[blurView setBlurRadiusSetOnce:NO];
+            //[blurView setBlurRadius:1.0];
+            [blurView setBlurQuality:@"default"];
+            [blurView setSaturationDeltaFactor:5];
+            [self.blurView addSubview:blurView];
+             */
         }
         
         // lockscreen blur

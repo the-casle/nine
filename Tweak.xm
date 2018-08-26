@@ -11,6 +11,7 @@ static BOOL enableIconRemove;
 static BOOL enableColorCube;
 static BOOL enableBannerSection;
 static BOOL enableClearBackground;
+static BOOL enableSeparators;
 
 // palette
 static BOOL paletteEnabled;
@@ -183,15 +184,26 @@ static id _container;
     MSHookIvar<UILabel *>(self, "_revealHintTitle").font = [UIFont fontWithName:@"HelveticaNeue-Light" size:24.0];
 }
 %end
-/*
-%hook SBDashBoardQuickActionsView
--(void) layoutSubviews {
+
+// Hiding the dumb action buttons when in nc
+%hook SBDashBoardQuickActionsViewController
+-(void) _updateState {
     %orig;
-    if(!isOnLockscreen()) ((UIView *)self).hidden = YES;
-    else ((UIView *)self).hidden = NO;
+    if(!isOnLockscreen()) ((UIView *)self.view).hidden = YES;
+    else ((UIView *)self.view).hidden = NO;
 }
 %end
-*/
+
+/*
+%hook NCNotificationListCollectionView
+-(void) setContentInset:(UIEdgeInsets) insets {
+    if(!isOnLockscreen()){
+        insets.top = 30;
+        %orig(insets);
+    } else %orig;
+}
+%end
+ */
 %hook SBFLockScreenDateView
 // hide clock && lockglyph && update wallpaper && update envwindow
 -(void)layoutSubviews {
@@ -322,17 +334,19 @@ static id _container;
 %end
 */
 
-static NSNumber *priorityQuickCheck = 0; // Used to prevent spam;
+static NSNumber *priorityQuickCheck; // Used to prevent spam;
 %hook NCNotificationCombinedListViewController
 -(void) _updatePrioritySectionLowestPosition{
     %orig;
-    [self.view.allSubviews enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop){
-        if([obj isKindOfClass:%c(NCNotificationShortLookView)]){
-            [obj tcUpdateTopLine];
-            priorityQuickCheck = [NSNumber numberWithDouble:self.prioritySectionLowestPosition];
-        }
-        
-    }];
+    if(priorityQuickCheck.doubleValue != self.prioritySectionLowestPosition && enableSeparators){
+        [self.view.allSubviews enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop){
+            if([obj isKindOfClass:%c(NCNotificationShortLookView)]){
+                [obj tcUpdateTopLine];
+                priorityQuickCheck = [NSNumber numberWithDouble:self.prioritySectionLowestPosition];
+            }
+            
+        }];
+    }
 }
 %end
 
@@ -543,52 +557,53 @@ static NSNumber *priorityQuickCheck = 0; // Used to prevent spam;
         }
         
         grabberView.hidden = YES;
-        
-        if(!self.topLine){
+        if(enableSeparators){
+            if(!self.topLine){
+                
+                self.topLine.drawsWithVibrantLightMode = NO;
+                self.topLine = [[%c(_UITableViewCellSeparatorView) alloc] initWithFrame:self.frame];
+                UIBlurEffect *effect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleDark];
+                UIVibrancyEffect *vibEffect = [UIVibrancyEffect effectForBlurEffect:effect];
+                [self.topLine setSeparatorEffect:vibEffect];
+                self.topLine.alpha = .45;
+                
+                [self addSubview:self.topLine];
+                
+            }
+            self.topLine.frameHeight = .5;
+            self.topLine.frameX = 12;
             
-            self.topLine.drawsWithVibrantLightMode = NO;
-            self.topLine = [[%c(_UITableViewCellSeparatorView) alloc] initWithFrame:self.frame];
-            UIBlurEffect *effect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleDark];
-            UIVibrancyEffect *vibEffect = [UIVibrancyEffect effectForBlurEffect:effect];
-            [self.topLine setSeparatorEffect:vibEffect];
-            self.topLine.alpha = .45;
+            if(!enableExtend || rotationCheckLandscape == YES){
+                self.topLine.frameWidth = self.frame.size.width - 17;
+            } else {
+                self.topLine.frameWidth = self.frame.size.width - 12;
+            }
+            self.topLine.frameY = -7;
             
-            [self addSubview:self.topLine];
+            [self tcUpdateTopLine];
             
+            if(!self.singleLine){
+                
+                self.singleLine.drawsWithVibrantLightMode = NO;
+                self.singleLine = [[%c(_UITableViewCellSeparatorView) alloc] initWithFrame:self.frame];
+                UIBlurEffect *effect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleDark];
+                UIVibrancyEffect *vibEffect = [UIVibrancyEffect effectForBlurEffect:effect];
+                [self.singleLine setSeparatorEffect:vibEffect];
+                self.singleLine.alpha = .45;
+                
+                [self addSubview:self.singleLine];
+                
+            }
+            self.singleLine.frameHeight = .5;
+            self.singleLine.frameX = 12;
+            
+            if(!enableExtend || rotationCheckLandscape == YES){
+                self.singleLine.frameWidth = self.frame.size.width - 17;
+            } else {
+                self.singleLine.frameWidth = self.frame.size.width - 12;
+            }
+            self.singleLine.frameY = 2 * self.center.y;
         }
-        self.topLine.frameHeight = .5;
-        self.topLine.frameX = 12;
-        
-        if(!enableExtend || rotationCheckLandscape == YES){
-            self.topLine.frameWidth = self.frame.size.width - 17;
-        } else {
-            self.topLine.frameWidth = self.frame.size.width - 12;
-        }
-        self.topLine.frameY = -7;
-        
-        [self tcUpdateTopLine];
-        
-        if(!self.singleLine){
-            
-            self.singleLine.drawsWithVibrantLightMode = NO;
-            self.singleLine = [[%c(_UITableViewCellSeparatorView) alloc] initWithFrame:self.frame];
-            UIBlurEffect *effect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleDark];
-            UIVibrancyEffect *vibEffect = [UIVibrancyEffect effectForBlurEffect:effect];
-            [self.singleLine setSeparatorEffect:vibEffect];
-            self.singleLine.alpha = .45;
-            
-            [self addSubview:self.singleLine];
-            
-        }
-        self.singleLine.frameHeight = .5;
-        self.singleLine.frameX = 12;
-        
-        if(!enableExtend || rotationCheckLandscape == YES){
-            self.singleLine.frameWidth = self.frame.size.width - 17;
-        } else {
-            self.singleLine.frameWidth = self.frame.size.width - 12;
-        }
-        self.singleLine.frameY = 2 * self.center.y;
     }
     %orig;
     [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
@@ -844,6 +859,12 @@ static NSNumber *priorityQuickCheck = 0; // Used to prevent spam;
  }
  */
 
+// loading up that palette
+static void loadPrefs() {
+    NSMutableDictionary *settings = [[NSMutableDictionary alloc] initWithContentsOfFile:@"/var/mobile/Library/Preferences/ch.mdaus.palette.plist"];
+    paletteEnabled = [settings objectForKey:@"bannersEnabled"] ? [[settings objectForKey:@"bannersEnabled"] boolValue] : NO;
+}
+
 %ctor {
     // Fix rejailbreak bug
     if (![NSBundle.mainBundle.bundleURL.lastPathComponent.pathExtension isEqualToString:@"app"]) {
@@ -860,6 +881,7 @@ static NSNumber *priorityQuickCheck = 0; // Used to prevent spam;
                                  @"colorEnabled": @NO,
                                  @"bannerSectionEnabled": @YES,
                                  @"clearBackgroundEnabled": @YES,
+                                 @"separatorsEnabled": @YES,
                                  }];
     BOOL tweakEnabled = [settings boolForKey:@"tweakEnabled"];
     enableBanners = [settings boolForKey:@"bannersEnabled"];
@@ -870,10 +892,12 @@ static NSNumber *priorityQuickCheck = 0; // Used to prevent spam;
     enableColorCube = [settings boolForKey:@"colorEnabled"];
     enableBannerSection = [settings boolForKey:@"bannerSectionEnabled"];
     enableClearBackground = [settings boolForKey:@"clearBackgroundEnabled"];
+    enableSeparators = [settings boolForKey:@"separatorsEnabled"];
     
-    if([[NSFileManager defaultManager] fileExistsAtPath: @"/Library/MobileSubstrate/DynamicLibraries/Palette.dylib"]){
-        paletteEnabled = YES;
-    }
+    loadPrefs();
+    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, (CFNotificationCallback)loadPrefs, CFSTR("ch.mdaus.palette"), NULL, CFNotificationSuspensionBehaviorCoalesce);
+    
+
     if(tweakEnabled) {
         %init;
         if(enableClearBackground) {

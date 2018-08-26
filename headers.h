@@ -172,7 +172,6 @@
 @property (readonly) BOOL isUILocked;
 -(BOOL)isUIUnlocking;
 -(BOOL)hasUIEverBeenLocked;
-
 @end
 
 @interface SBFWallpaperView : UIView
@@ -263,7 +262,17 @@
 - (long long)dismissalSlidingMode;
 @end
 
+@interface SBDashBoardQuickActionsViewController : UIViewController
+@end
+
 @interface SBCoverSheetPrimarySlidingViewController
 @property (nonatomic,retain) SBCoverSheetPanelBackgroundContainerView * panelBackgroundContainerView;
 @end
 
+@interface _UIBackdropView : NSObject
+- (id)initWithStyle:(long long)arg1;
+- (void)setBlurQuality:(id)arg1;
+- (void)setSaturationDeltaFactor:(double)arg1;
+- (void)setBlurRadius:(double)arg1;
+- (void)setBlurRadiusSetOnce:(bool)arg1;
+@end
