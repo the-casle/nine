@@ -5,6 +5,7 @@
 #import <substrate.h>
 #import "CustomWorks/TCSetFrame/TCSetFrame.h"
 #import "CustomWorks/ColorCube/CCColorCube.h"
+#include <CSColorPicker/CSColorPicker.h>
 
 //extern "C" CFNotificationCenterRef CFNotificationCenterGetDistributedCenter(void);
 
@@ -102,6 +103,7 @@
 @end
 
 @interface NCNotificationListCollectionView : UICollectionView
+@property (nonatomic, retain) NSArray *visibleCells;
 @end
 
 
@@ -116,6 +118,7 @@
 @property (assign,nonatomic) double prioritySectionLowestPosition;
 @property (assign,getter=isShowingNotificationsHistory,nonatomic) BOOL showingNotificationsHistory;
 @property (nonatomic,retain) NCNotificationPriorityList * notificationPriorityList;
+@property (nonatomic, retain) NCNotificationListCollectionView *collectionView;
 -(void)forceNotificationHistoryRevealed:(BOOL)arg1 animated:(BOOL)arg2;
 - (NCNotificationListCollectionView *)_scrollView;
 -(BOOL) hasContent;
@@ -124,23 +127,28 @@
 
 @end
 
-@interface NCNotificationListCell : UIView
 
-@end
 
 @interface NCNotificationRequest
 
 @end
 
+
+@interface NCNotificationShortLookViewController : UIViewController
+-(id) delegate;
+//@property (nonatomic, retain) NCNotificationListCell *associatedView;
+@property (nonatomic, retain) NCNotificationRequest *notificationRequest;
+@end
+
+@interface NCNotificationListCell : UIView
+@property (nonatomic, retain) NCNotificationShortLookViewController *contentViewController;
+@end
+
+
 @interface NCNotificationGrabberView : UIView
 @property (nonatomic, retain) UIView *pill;
 @end
 
-@interface NCNotificationShortLookViewController : UIViewController
--(id) delegate;
-@property (nonatomic, retain) NCNotificationListCell *associatedView;
-@property (nonatomic, retain) NCNotificationRequest *notificationRequest;
-@end
 
 @interface _NCNotificationViewControllerView : UIView
 @property (nonatomic, retain) UIView *contentView;

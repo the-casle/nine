@@ -9,6 +9,8 @@ static NSNumber *blurValueHistory;
 static NSNumber *blurValueGeneral;
 static NSNumber *darkeningValueHistory;
 static NSNumber *darkeningValueGeneral;
+static UIColor *lockscreenColoring;
+
 
 //----------------------------------------------------------------
 
@@ -17,6 +19,7 @@ extern BOOL isUILocked();
 
 @implementation TCBackgroundViewController {
     SBUIController *_sbCont;
+    //WALockscreenWidgetViewController *_widgetController;
 }
 
 - (instancetype) init{
@@ -25,8 +28,6 @@ extern BOOL isUILocked();
         frame.size.width = (frame.size.width > frame.size.height) ? frame.size.width : frame.size.height;
         frame.size.height = (frame.size.width > frame.size.height) ? frame.size.width : frame.size.height;
         //frame.size.height += 200;
-
-        
 
         CGRect screenFrame = UIScreen.mainScreen.bounds;
 
@@ -37,17 +38,21 @@ extern BOOL isUILocked();
         HBPreferences *settings = [[HBPreferences alloc] initWithIdentifier:@"com.thecasle.nineprefs"];
         [settings registerDefaults:@{
                                      @"enableAlwaysBlur": @NO,
-                                     @"historyBlurValue": @20,
+                                     @"historyBlurValue": @17,
                                      @"generalBlurValue": @12,
                                      @"generalDarkeningValue":@1,
                                      @"historyDarkeningValue":@4,
+                                     @"lockscreenColors":@"#000000",
                                      }];
         alwaysBlurEnabled = [settings boolForKey:@"enableAlwaysBlur"];
         blurValueHistory = [NSNumber numberWithDouble: [settings doubleForKey:@"historyBlurValue"]];
         blurValueGeneral = [NSNumber numberWithDouble: [settings doubleForKey:@"generalBlurValue"]];
         darkeningValueHistory = [NSNumber numberWithDouble: ([settings doubleForKey:@"historyDarkeningValue"] * .1)];
         darkeningValueGeneral = [NSNumber numberWithDouble: ([settings doubleForKey:@"generalDarkeningValue"] * .1)];
-        
+        lockscreenColoring = [UIColor colorFromHexString:[settings objectForKey:@"lockscreenColor"]];
+        NSLog(@"nine_TWEAK | %@", [settings objectForKey:@"lockscreenColors"]);
+        //NSLog(@"nine_TWEAK | %@", lockscreenColoring);
+        //lockscreenColoring = [UIColor blackColor];
 
         if(!self.view){
             self.view = [[UIView alloc] initWithFrame:screenFrame];
@@ -89,7 +94,7 @@ extern BOOL isUILocked();
         if(!self.blurEffectView){
             UIBlurEffect *blurEffect = [UIBlurEffect effectWithBlurRadius:blurValueGeneral.doubleValue];
             self.blurEffectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
-            self.blurEffectView.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:darkeningValueGeneral.doubleValue];
+            self.blurEffectView.backgroundColor = [lockscreenColoring colorWithAlphaComponent:darkeningValueGeneral.doubleValue];
             self.blurEffectView.frame = frame;
             self.blurEffectView.alpha = 0;
             

@@ -194,16 +194,17 @@ static id _container;
 }
 %end
 
-/*
+
 %hook NCNotificationListCollectionView
--(void) setContentInset:(UIEdgeInsets) insets {
+-(void) setMinimumContentOffset:(NSPoint) insets {
+    /*
     if(!isOnLockscreen()){
-        insets.top = 30;
+        insets.y = -205;
         %orig(insets);
-    } else %orig;
+    } else %orig;*/
 }
 %end
- */
+
 %hook SBFLockScreenDateView
 // hide clock && lockglyph && update wallpaper && update envwindow
 -(void)layoutSubviews {
@@ -334,18 +335,21 @@ static id _container;
 %end
 */
 
-static NSNumber *priorityQuickCheck; // Used to prevent spam;
+
+ // Used to prevent spam;
 %hook NCNotificationCombinedListViewController
 -(void) _updatePrioritySectionLowestPosition{
+    static NSNumber *priorityQuickCheck;
     %orig;
     if(priorityQuickCheck.doubleValue != self.prioritySectionLowestPosition && enableSeparators){
-        [self.view.allSubviews enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop){
-            if([obj isKindOfClass:%c(NCNotificationShortLookView)]){
-                [obj tcUpdateTopLine];
-                priorityQuickCheck = [NSNumber numberWithDouble:self.prioritySectionLowestPosition];
+        for(NCNotificationListCell *cell in self.collectionView.visibleCells){
+            NCNotificationShortLookView *shortView = ((NCNotificationShortLookView *)((_NCNotificationViewControllerView *)cell.contentViewController.view).contentView);
+            if([shortView isKindOfClass:%c(NCNotificationShortLookView)] && [shortView respondsToSelector:@selector(tcUpdateTopLine)]){
+                [shortView tcUpdateTopLine];
             }
             
-        }];
+        }
+        priorityQuickCheck = [NSNumber numberWithDouble:self.prioritySectionLowestPosition];
     }
 }
 %end

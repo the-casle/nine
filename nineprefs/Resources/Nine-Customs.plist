@@ -33,6 +33,26 @@
             <string>Blur radius: 1</string>
         </dict>
         <dict>
+            <key>PostNotification</key>
+            <string>com.thecasle.nineprefs/ReloadPrefs</string>
+            <key>cell</key>
+            <string>PSLinkCell</string>
+            <key>cellClass</key>
+            <string>CSColorDisplayCell</string>
+            <key>defaults</key>
+            <string>com.thecasle.nineprefs</string>
+            <key>defaultsPath</key>
+            <string>/Library/PreferenceBundles/nineprefs.bundle</string>
+            <key>key</key>
+            <string>lockscreenColors</string>
+            <key>label</key>
+            <string>Lockscreen color</string>
+            <key>fallback</key>
+            <string>000000</string>
+            <key>alpha</key>
+            <false/>
+        </dict>
+        <dict>
             <key>cell</key>
             <string>PSSliderCell</string>
             <key>cellClass</key>
@@ -64,7 +84,7 @@
             <key>cellClass</key>
             <string>HBStepperTableCell</string>
             <key>default</key>
-            <real>20</real>
+            <real>17</real>
             <key>defaults</key>
             <string>com.thecasle.nineprefs</string>
             <key>key</key>
