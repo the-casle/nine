@@ -4,11 +4,8 @@ Depends: mobilesubstrate, ws.hbang.common (>= 1.11), com.creaturesurvive.libcsco
 Version: 0.1.1
 Architecture: iphoneos-arm
 Description: Reworks the Notification Center
- Beta Features:
- - Clear background
- - Disable banners (needs testing!)
- - Revised customization tab
- - Palette banner support
+ iOS nine Notification Center and lock screen
+ - Beta version
 Maintainer: Jake Kaslewicz <jakaslewicz@gmail.com>
 Author: Jake Kaslewicz
 Section: Tweaks

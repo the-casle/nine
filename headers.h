@@ -1,5 +1,7 @@
 #import <Foundation/Foundation.h>
 #import "TCBackgroundViewController.h"
+#import "_UIBackdropViewSettingsNineHistory.h"
+#import "_UIBackdropViewSettingsNineLock.h"
 #import <notify.h>
 #include <objc/runtime.h>
 #import <substrate.h>
@@ -106,6 +108,9 @@
 @property (nonatomic, retain) NSArray *visibleCells;
 @end
 
+@interface SBDashBoardCombinedListViewController : UIViewController
+@end
+
 
 @interface NCNotificationListViewController : UICollectionViewController
 @end
@@ -137,6 +142,7 @@
 @interface NCNotificationShortLookViewController : UIViewController
 -(id) delegate;
 //@property (nonatomic, retain) NCNotificationListCell *associatedView;
+@property (nonatomic, retain) NCNotificationCombinedListViewController *_parentViewController;
 @property (nonatomic, retain) NCNotificationRequest *notificationRequest;
 @end
 
@@ -275,6 +281,40 @@
 
 @interface SBCoverSheetPrimarySlidingViewController
 @property (nonatomic,retain) SBCoverSheetPanelBackgroundContainerView * panelBackgroundContainerView;
+@end
+
+@interface _UIBackdropViewSettings (nine)
+@property (assign,nonatomic) double blurRadius;
+-(id) init;
++(id)settingsForPrivateStyle:(long long)arg1 ;
+@property (assign,getter=isBackdropVisible,nonatomic) BOOL backdropVisible;
+@property (assign,nonatomic) double grayscaleTintLevel;
+@property (assign,nonatomic) BOOL usesBackdropEffectView;
+@property (nonatomic,copy) NSString * blurQuality;
+@property (assign,nonatomic) double scale;
+@property (assign,nonatomic) BOOL appliesTintAndBlurSettings;
+@property (assign,nonatomic) double grayscaleTintMaskAlpha;
+@property (assign,nonatomic) double colorTintMaskAlpha;
+@property (assign,nonatomic) double filterMaskAlpha;
+@property (assign,nonatomic) BOOL usesColorTintView;
+@property (assign,nonatomic) double colorTintAlpha;
+@property (nonatomic,retain) UIColor * colorTint; 
+@property (assign,nonatomic) BOOL usesDarkeningTintView;
+@property (nonatomic,retain) UIColor * legibleColor;
+@property (assign,getter=isEnabled,nonatomic) BOOL enabled;
+@property (assign,nonatomic) BOOL usesContentView;
+@property (assign,nonatomic) double darkeningTintAlpha;
+@property (assign,nonatomic) double saturationDeltaFactor;
+@property (assign,nonatomic) double darkeningTintBrightness;
+@property (assign,nonatomic) double darkeningTintHue;
+@property (assign,nonatomic) double darkeningTintSaturation;
+@end
+
+@interface _UIBackdropViewSettingsBlur : _UIBackdropViewSettings
+@end
+
+@interface BSUIBackdropView (nine)
+-(id) initWithSettings:(id) settings;
 @end
 
 @interface _UIBackdropView : NSObject

@@ -194,17 +194,29 @@ static id _container;
 }
 %end
 
-
+/*
 %hook NCNotificationListCollectionView
--(void) setMinimumContentOffset:(NSPoint) insets {
-    /*
+-(UIEdgeInsets) adjustedContentInset {
     if(!isOnLockscreen()){
-        insets.y = -205;
-        %orig(insets);
-    } else %orig;*/
+        UIEdgeInsets inset = %orig;
+        if(@available(iOS 11.0, *)) inset.top = self.safeAreaInsets.top;
+        return inset;
+    } else return %orig;
 }
 %end
-
+*/
+/*
+%hook SBDashBoardCombinedListViewController
+-(double)topContentInset{
+    if(!isOnLockscreen()){
+        double inset = %orig;
+        if(@available(iOS 11.0, *)) inset = self.view.safeAreaInsets.top;
+        
+        return inset;
+    } else return %orig;
+}
+%end
+*/
 %hook SBFLockScreenDateView
 // hide clock && lockglyph && update wallpaper && update envwindow
 -(void)layoutSubviews {
@@ -314,8 +326,15 @@ static id _container;
 -(void)loadView{
     %orig;
     [((SBDashBoardView *)self.view).backgroundView addSubview: self.backgroundCont.view];
-    //NSLog(@"nine_TWEAK | %@",self.backgroundCont);
 }
+// Hiding the dumb views that darken after scrollin in
+-(void) viewWillLayoutSubviews {
+    %orig;
+    MSHookIvar<UIView *>(((SBDashBoardView *)self.view).backgroundView, "_sourceOverView").hidden = YES;
+    MSHookIvar<UIView *>(((SBDashBoardView *)self.view).backgroundView, "_lightenSourceOverView").hidden = YES;
+    MSHookIvar<UIView *>(((SBDashBoardView *)self.view).backgroundView, "_darkenSourceOverView").hidden = YES;
+}
+
 %end
 /*
 %hook SBCoverSheetPositionView
@@ -334,22 +353,25 @@ static id _container;
 }
 %end
 */
+/*
+%hook _UIBackdropViewSettings
+-(void)computeOutputSettingsUsingModel:(id)arg1 {
+    //%orig;
+}
+%end
+*/
 
-
- // Used to prevent spam;
+ // Used to update separators;
 %hook NCNotificationCombinedListViewController
 -(void) _updatePrioritySectionLowestPosition{
-    static NSNumber *priorityQuickCheck;
     %orig;
-    if(priorityQuickCheck.doubleValue != self.prioritySectionLowestPosition && enableSeparators){
+    if(enableSeparators){
         for(NCNotificationListCell *cell in self.collectionView.visibleCells){
             NCNotificationShortLookView *shortView = ((NCNotificationShortLookView *)((_NCNotificationViewControllerView *)cell.contentViewController.view).contentView);
             if([shortView isKindOfClass:%c(NCNotificationShortLookView)] && [shortView respondsToSelector:@selector(tcUpdateTopLine)]){
                 [shortView tcUpdateTopLine];
             }
-            
         }
-        priorityQuickCheck = [NSNumber numberWithDouble:self.prioritySectionLowestPosition];
     }
 }
 %end
@@ -633,7 +655,7 @@ static id _container;
 %new
 -(void) tcUpdateTopLine{
     if([self._viewControllerForAncestor respondsToSelector:@selector(delegate)]){
-        if([((NCNotificationCombinedListViewController *)((NCNotificationShortLookViewController *)self._viewControllerForAncestor).delegate).notificationPriorityList.requests firstObject] == ((NCNotificationShortLookViewController *)self._viewControllerForAncestor).notificationRequest){
+        if([((NCNotificationCombinedListViewController *)((NCNotificationShortLookViewController *)self._viewControllerForAncestor)._parentViewController).notificationPriorityList.requests firstObject] == ((NCNotificationShortLookViewController *)self._viewControllerForAncestor).notificationRequest){
             self.topLine.alpha = 0;
             self.topLine.hidden = NO;
             [UIView animateWithDuration:.3
@@ -866,7 +888,10 @@ static id _container;
 // loading up that palette
 static void loadPrefs() {
     NSMutableDictionary *settings = [[NSMutableDictionary alloc] initWithContentsOfFile:@"/var/mobile/Library/Preferences/ch.mdaus.palette.plist"];
-    paletteEnabled = [settings objectForKey:@"bannersEnabled"] ? [[settings objectForKey:@"bannersEnabled"] boolValue] : NO;
+    if([[NSFileManager defaultManager] fileExistsAtPath: @"/Library/MobileSubstrate/DynamicLibraries/Palette.dylib"]){
+        paletteEnabled = [settings objectForKey:@"bannersEnabled"] ? [[settings objectForKey:@"bannersEnabled"] boolValue] : NO;
+    }
+    
 }
 
 %ctor {

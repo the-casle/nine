@@ -21,11 +21,19 @@
 }
 
 -(void) respring{
+    
+    pid_t respringID;
+    char *argv[] = {"/usr/bin/killall", "backboardd", NULL};
+    posix_spawn(&respringID, argv[0], NULL, NULL, argv, NULL);
+    waitpid(respringID, NULL, WEXITED);
+    
+    /*
     pid_t pid;
     int status;
     const char *argv[] = {"killall", "SpringBoard", NULL};
     posix_spawn(&pid, "/usr/bin/killall", NULL, NULL, (char* const*)argv, NULL);
     waitpid(pid, &status, WEXITED);
+     */
 }
 
 @end
