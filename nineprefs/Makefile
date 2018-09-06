@@ -6,7 +6,7 @@ nineprefs_INSTALL_PATH = /Library/PreferenceBundles
 nineprefs_FRAMEWORKS = UIKit
 nineprefs_PRIVATE_FRAMEWORKS = Preferences
 nineprefs_EXTRA_FRAMEWORKS = Cephei CepheiPrefs
-nineprefs_LDFLAGS += -lCSColorPicker
+nineprefs_LIBRARIES = colorpicker
 
 include $(THEOS_MAKE_PATH)/bundle.mk
 

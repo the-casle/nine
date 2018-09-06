@@ -12,6 +12,7 @@ static BOOL enableColorCube;
 static BOOL enableBannerSection;
 static BOOL enableClearBackground;
 static BOOL enableSeparators;
+static BOOL enableNotifications;
 
 // palette
 static BOOL paletteEnabled;
@@ -505,131 +506,134 @@ static id _container;
                 
             }
         }
+        
     } else {
         // not a banner
-        /*
-        UIColor *bottomColor = [[UIColor blueColor] colorWithAlphaComponent:.4];
-        
-        // Create the gradient
-        if([self respondsToSelector:@selector(backgroundView)]){
-            CALayer *maskView = [[CALayer alloc] init];
-            maskView.frame = self.backgroundView.bounds;
-            
-            CAGradientLayer *theVertGradient = [CAGradientLayer layer];
-            theVertGradient.colors = [NSArray arrayWithObjects: [UIColor clearColor], (id)bottomColor.CGColor, (id)bottomColor.CGColor, [UIColor clearColor], nil];
-            theVertGradient.locations = [NSArray arrayWithObjects: [NSNumber numberWithDouble: .000], [NSNumber numberWithDouble: 0.3], [NSNumber numberWithDouble: 0.7],[NSNumber numberWithDouble: 1], [NSNumber numberWithDouble: 1], nil];
-            theVertGradient.startPoint = CGPointMake(0.5, 0.0);
-            theVertGradient.endPoint = CGPointMake(0.5, 1.0);
-            theVertGradient.frame = self.backgroundView.bounds;
+        if(enableNotifications){
             /*
-            CAGradientLayer *theHorzGradient = [CAGradientLayer layer];
-            theHorzGradient.colors = [NSArray arrayWithObjects: [UIColor clearColor], (id)bottomColor.CGColor, [UIColor clearColor], nil];
-            theHorzGradient.locations = [NSArray arrayWithObjects: [NSNumber numberWithDouble: .005], [NSNumber numberWithDouble: 0.75], [NSNumber numberWithDouble: 1], [NSNumber numberWithDouble: 1], nil];
-            theHorzGradient.startPoint = CGPointMake(0.0, 0.5);
-            theHorzGradient.endPoint = CGPointMake(1.0, 0.5);
-            theHorzGradient.frame = self.backgroundView.bounds;
-            */
+             UIColor *bottomColor = [[UIColor blueColor] colorWithAlphaComponent:.4];
+             
+             // Create the gradient
+             if([self respondsToSelector:@selector(backgroundView)]){
+             CALayer *maskView = [[CALayer alloc] init];
+             maskView.frame = self.backgroundView.bounds;
+             
+             CAGradientLayer *theVertGradient = [CAGradientLayer layer];
+             theVertGradient.colors = [NSArray arrayWithObjects: [UIColor clearColor], (id)bottomColor.CGColor, (id)bottomColor.CGColor, [UIColor clearColor], nil];
+             theVertGradient.locations = [NSArray arrayWithObjects: [NSNumber numberWithDouble: .000], [NSNumber numberWithDouble: 0.3], [NSNumber numberWithDouble: 0.7],[NSNumber numberWithDouble: 1], [NSNumber numberWithDouble: 1], nil];
+             theVertGradient.startPoint = CGPointMake(0.5, 0.0);
+             theVertGradient.endPoint = CGPointMake(0.5, 1.0);
+             theVertGradient.frame = self.backgroundView.bounds;
+             /*
+             CAGradientLayer *theHorzGradient = [CAGradientLayer layer];
+             theHorzGradient.colors = [NSArray arrayWithObjects: [UIColor clearColor], (id)bottomColor.CGColor, [UIColor clearColor], nil];
+             theHorzGradient.locations = [NSArray arrayWithObjects: [NSNumber numberWithDouble: .005], [NSNumber numberWithDouble: 0.75], [NSNumber numberWithDouble: 1], [NSNumber numberWithDouble: 1], nil];
+             theHorzGradient.startPoint = CGPointMake(0.0, 0.5);
+             theHorzGradient.endPoint = CGPointMake(1.0, 0.5);
+             theHorzGradient.frame = self.backgroundView.bounds;
+             */
             //[maskView addSublayer:theVertGradient];
             //[maskView addSublayer:theHorzGradient];
             /*
-            UIGraphicsBeginImageContextWithOptions(maskView.bounds.size, NO, 0.0);
-            [maskView renderInContext: UIGraphicsGetCurrentContext()];
-            UIImage *layerImage = UIGraphicsGetImageFromCurrentImageContext();
-            UIGraphicsEndImageContext();
-            maskView.contents = (id) layerImage.CGImage;
-            maskView.sublayers = nil;
-            */
+             UIGraphicsBeginImageContextWithOptions(maskView.bounds.size, NO, 0.0);
+             [maskView renderInContext: UIGraphicsGetCurrentContext()];
+             UIImage *layerImage = UIGraphicsGetImageFromCurrentImageContext();
+             UIGraphicsEndImageContext();
+             maskView.contents = (id) layerImage.CGImage;
+             maskView.sublayers = nil;
+             */
             /*
-            //Add gradient to view
-            self.backgroundView.layer.mask = theVertGradient;
-            self.backgroundView.alpha = 1;
-        }
-        */
-        
-        if(self.backgroundView){
-            self.backgroundView.hidden = YES;
-        }
-        
-        MSHookIvar<UIImageView *>(self, "_shadowView").hidden = YES;
-        
-        //Sets all text to white color
-        [[self _headerContentView] setTintColor:[UIColor whiteColor]];
-        [[[[self _headerContentView] _dateLabel] _layer] setFilters:nil];
-        [[[[self _headerContentView] _titleLabel] _layer] setFilters:nil];
-        for(id object in self.allSubviews){
-            if([object isKindOfClass:%c(NCNotificationContentView)]){
-                [[object _secondaryTextView] setTextColor:[UIColor whiteColor]];
-                [[object _primaryLabel] setTextColor:[UIColor whiteColor]];
-                [[object _primarySubtitleLabel] setTextColor:[UIColor whiteColor]];
+             //Add gradient to view
+             self.backgroundView.layer.mask = theVertGradient;
+             self.backgroundView.alpha = 1;
+             }
+             */
+            
+            if(self.backgroundView){
+                self.backgroundView.hidden = YES;
+            }
+            
+            MSHookIvar<UIImageView *>(self, "_shadowView").hidden = YES;
+            
+            //Sets all text to white color
+            [[self _headerContentView] setTintColor:[UIColor whiteColor]];
+            [[[[self _headerContentView] _dateLabel] _layer] setFilters:nil];
+            [[[[self _headerContentView] _titleLabel] _layer] setFilters:nil];
+            for(id object in self.allSubviews){
+                if([object isKindOfClass:%c(NCNotificationContentView)]){
+                    [[object _secondaryTextView] setTextColor:[UIColor whiteColor]];
+                    [[object _primaryLabel] setTextColor:[UIColor whiteColor]];
+                    [[object _primarySubtitleLabel] setTextColor:[UIColor whiteColor]];
+                }
+            }
+            
+            [[self backgroundMaterialView] setHidden:YES];
+            MSHookIvar<MTMaterialView *>(self, "_mainOverlayView").hidden = true;
+            
+            BOOL rotationCheckLandscape = NO;
+            [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
+            UIInterfaceOrientation interfaceOrientation = [[UIApplication sharedApplication] statusBarOrientation];
+            
+            if (UIDeviceOrientationIsLandscape(interfaceOrientation))
+            {
+                rotationCheckLandscape = YES;
+            }
+            [[UIDevice currentDevice] endGeneratingDeviceOrientationNotifications];
+            if(!enableExtend || rotationCheckLandscape == YES){
+                self.frameWidth = self.superview.frame.size.width - .5;
+            } else {
+                self.frameWidth = UIScreen.mainScreen.bounds.size.width - ((UIScreen.mainScreen.bounds.size.width - self.superview.frame.size.width) / 2);
+            }
+            
+            if(enableSeparators){
+                if(!self.topLine){
+                    
+                    self.topLine.drawsWithVibrantLightMode = NO;
+                    self.topLine = [[%c(_UITableViewCellSeparatorView) alloc] initWithFrame:self.frame];
+                    UIBlurEffect *effect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleDark];
+                    UIVibrancyEffect *vibEffect = [UIVibrancyEffect effectForBlurEffect:effect];
+                    [self.topLine setSeparatorEffect:vibEffect];
+                    self.topLine.alpha = .45;
+                    
+                    [self addSubview:self.topLine];
+                    
+                }
+                self.topLine.frameHeight = .5;
+                self.topLine.frameX = 12;
+                
+                if(!enableExtend || rotationCheckLandscape == YES){
+                    self.topLine.frameWidth = self.frame.size.width - 17;
+                } else {
+                    self.topLine.frameWidth = self.frame.size.width - 12;
+                }
+                self.topLine.frameY = -7;
+                
+                [self tcUpdateTopLine];
+                
+                if(!self.singleLine){
+                    
+                    self.singleLine.drawsWithVibrantLightMode = NO;
+                    self.singleLine = [[%c(_UITableViewCellSeparatorView) alloc] initWithFrame:self.frame];
+                    UIBlurEffect *effect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleDark];
+                    UIVibrancyEffect *vibEffect = [UIVibrancyEffect effectForBlurEffect:effect];
+                    [self.singleLine setSeparatorEffect:vibEffect];
+                    self.singleLine.alpha = .45;
+                    
+                    [self addSubview:self.singleLine];
+                    
+                }
+                self.singleLine.frameHeight = .5;
+                self.singleLine.frameX = 12;
+                
+                if(!enableExtend || rotationCheckLandscape == YES){
+                    self.singleLine.frameWidth = self.frame.size.width - 17;
+                } else {
+                    self.singleLine.frameWidth = self.frame.size.width - 12;
+                }
+                self.singleLine.frameY = 2 * self.center.y;
             }
         }
-        
-        [[self backgroundMaterialView] setHidden:YES];
-        MSHookIvar<MTMaterialView *>(self, "_mainOverlayView").hidden = true;
-        
-        BOOL rotationCheckLandscape = NO;
-        [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
-        UIInterfaceOrientation interfaceOrientation = [[UIApplication sharedApplication] statusBarOrientation];
-        
-        if (UIDeviceOrientationIsLandscape(interfaceOrientation))
-        {
-            rotationCheckLandscape = YES;
-        }
-        [[UIDevice currentDevice] endGeneratingDeviceOrientationNotifications];
-        if(!enableExtend || rotationCheckLandscape == YES){
-            self.frameWidth = self.superview.frame.size.width - .5;
-        } else {
-            self.frameWidth = UIScreen.mainScreen.bounds.size.width - ((UIScreen.mainScreen.bounds.size.width - self.superview.frame.size.width) / 2);
-        }
-        
         grabberView.hidden = YES;
-        if(enableSeparators){
-            if(!self.topLine){
-                
-                self.topLine.drawsWithVibrantLightMode = NO;
-                self.topLine = [[%c(_UITableViewCellSeparatorView) alloc] initWithFrame:self.frame];
-                UIBlurEffect *effect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleDark];
-                UIVibrancyEffect *vibEffect = [UIVibrancyEffect effectForBlurEffect:effect];
-                [self.topLine setSeparatorEffect:vibEffect];
-                self.topLine.alpha = .45;
-                
-                [self addSubview:self.topLine];
-                
-            }
-            self.topLine.frameHeight = .5;
-            self.topLine.frameX = 12;
-            
-            if(!enableExtend || rotationCheckLandscape == YES){
-                self.topLine.frameWidth = self.frame.size.width - 17;
-            } else {
-                self.topLine.frameWidth = self.frame.size.width - 12;
-            }
-            self.topLine.frameY = -7;
-            
-            [self tcUpdateTopLine];
-            
-            if(!self.singleLine){
-                
-                self.singleLine.drawsWithVibrantLightMode = NO;
-                self.singleLine = [[%c(_UITableViewCellSeparatorView) alloc] initWithFrame:self.frame];
-                UIBlurEffect *effect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleDark];
-                UIVibrancyEffect *vibEffect = [UIVibrancyEffect effectForBlurEffect:effect];
-                [self.singleLine setSeparatorEffect:vibEffect];
-                self.singleLine.alpha = .45;
-                
-                [self addSubview:self.singleLine];
-                
-            }
-            self.singleLine.frameHeight = .5;
-            self.singleLine.frameX = 12;
-            
-            if(!enableExtend || rotationCheckLandscape == YES){
-                self.singleLine.frameWidth = self.frame.size.width - 17;
-            } else {
-                self.singleLine.frameWidth = self.frame.size.width - 12;
-            }
-            self.singleLine.frameY = 2 * self.center.y;
-        }
     }
     %orig;
     [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
@@ -772,14 +776,17 @@ static id _container;
 %hook NCNotificationListCellActionButton
 -(void) layoutSubviews{
     %orig;
-    MTMaterialView *materialView = MSHookIvar<MTMaterialView *>(self, "_backgroundView");
-    MSHookIvar<MTMaterialView *>(materialView, "_backdropView").hidden = true;
-    MSHookIvar<MTMaterialView *>(self, "_backgroundOverlayView").hidden = true;
+    if(enableNotifications){
+        MTMaterialView *materialView = MSHookIvar<MTMaterialView *>(self, "_backgroundView");
+        MSHookIvar<MTMaterialView *>(materialView, "_backdropView").hidden = true;
+        MSHookIvar<MTMaterialView *>(self, "_backgroundOverlayView").hidden = true;
+        
+        UILabel *label = MSHookIvar<UILabel *>(self, "_titleLabel");
+        [label setTextColor:[UIColor whiteColor]];
+        [[label _layer] setFilters:nil];
+        MSHookIvar<UIView *>(self, "_backgroundHighlightView").alpha = 0;
+    }
     
-    UILabel *label = MSHookIvar<UILabel *>(self, "_titleLabel");
-    [label setTextColor:[UIColor whiteColor]];
-    [[label _layer] setFilters:nil];
-    MSHookIvar<UIView *>(self, "_backgroundHighlightView").alpha = 0;
 }
 %end
 
@@ -911,6 +918,7 @@ static void loadPrefs() {
                                  @"bannerSectionEnabled": @YES,
                                  @"clearBackgroundEnabled": @YES,
                                  @"separatorsEnabled": @YES,
+                                 @"notificationsEnabled": @YES,
                                  }];
     BOOL tweakEnabled = [settings boolForKey:@"tweakEnabled"];
     enableBanners = [settings boolForKey:@"bannersEnabled"];
@@ -922,6 +930,7 @@ static void loadPrefs() {
     enableBannerSection = [settings boolForKey:@"bannerSectionEnabled"];
     enableClearBackground = [settings boolForKey:@"clearBackgroundEnabled"];
     enableSeparators = [settings boolForKey:@"separatorsEnabled"];
+    enableNotifications = [settings boolForKey:@"notificationsEnabled"];
     
     loadPrefs();
     CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, (CFNotificationCallback)loadPrefs, CFSTR("ch.mdaus.palette"), NULL, CFNotificationSuspensionBehaviorCoalesce);

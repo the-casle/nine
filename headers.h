@@ -7,9 +7,10 @@
 #import <substrate.h>
 #import "CustomWorks/TCSetFrame/TCSetFrame.h"
 #import "CustomWorks/ColorCube/CCColorCube.h"
-#include <CSColorPicker/CSColorPicker.h>
 
 //extern "C" CFNotificationCenterRef CFNotificationCenterGetDistributedCenter(void);
+extern "C" UIColor *LCPParseColorString(NSString *colorStringFromPrefs, NSString *colorStringFallback);
+
 
 @interface UIView (copy)
 -(void)_setCornerRadius:(double)arg1;

@@ -18,13 +18,15 @@ static UIColor *notificationCenterColoring;
         HBPreferences *settings = [[HBPreferences alloc] initWithIdentifier:@"com.thecasle.nineprefs"];
         HBPreferences *colorSettings = [[HBPreferences alloc] initWithIdentifier:@"com.thecasle.nineprefs.color"];
         [settings registerDefaults:@{
-                                     @"historyBlurValue": @17,
+                                     @"historyBlurValue": @20,
                                      @"historyDarkeningValue":@4,
                                      }];
         blurValueHistory = [NSNumber numberWithDouble: [settings doubleForKey:@"historyBlurValue"]];
         darkeningValueHistory = [NSNumber numberWithDouble: ([settings doubleForKey:@"historyDarkeningValue"] * .1)];
-        notificationCenterColoring = [UIColor colorFromHexString:[colorSettings objectForKey:@"notificationCenterColors"]];
-        notificationCenterColoring = [UIColor blackColor];
+
+        notificationCenterColoring = LCPParseColorString([colorSettings objectForKey:@"notificationCenterColors"], @"#000000");
+        NSLog(@"nine_TWEAK | %@ and %@", notificationCenterColoring, [colorSettings objectForKey:@"notificationCenterColors"]);
+        //notificationCenterColoring = [UIColor blackColor];
         
         //self = [[objc_getClass("_UIBackdropViewSettingsBlur") alloc] init];
         
@@ -57,7 +59,7 @@ static UIColor *notificationCenterColoring;
     self.grayscaleTintMaskAlpha = 1;
     
     self.usesColorTintView = YES;
-    self.colorTint = [UIColor blackColor];
+    self.colorTint = notificationCenterColoring;
     self.colorTintMaskAlpha = 1;
     self.colorTintAlpha = darkeningValueHistory.doubleValue;
 }

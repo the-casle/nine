@@ -5,13 +5,6 @@
 #import <Cephei/HBPreferences.h>
 
 static BOOL alwaysBlurEnabled;
-static NSNumber *blurValueHistory;
-static NSNumber *blurValueGeneral;
-static NSNumber *darkeningValueHistory;
-static NSNumber *darkeningValueGeneral;
-static UIColor *lockscreenColoring;
-static UIColor *notificationCenterColoring;
-
 
 //----------------------------------------------------------------
 
@@ -37,26 +30,11 @@ extern BOOL isUILocked();
         
         // load preferences
         HBPreferences *settings = [[HBPreferences alloc] initWithIdentifier:@"com.thecasle.nineprefs"];
-        HBPreferences *colorSettings = [[HBPreferences alloc] initWithIdentifier:@"com.thecasle.nineprefs.color"];
         [settings registerDefaults:@{
                                      @"enableAlwaysBlur": @NO,
-                                     @"historyBlurValue": @17,
-                                     @"generalBlurValue": @12,
-                                     @"generalDarkeningValue":@1,
-                                     @"historyDarkeningValue":@4,
                                      }];
         alwaysBlurEnabled = [settings boolForKey:@"enableAlwaysBlur"];
-        blurValueHistory = [NSNumber numberWithDouble: [settings doubleForKey:@"historyBlurValue"]];
-        blurValueGeneral = [NSNumber numberWithDouble: [settings doubleForKey:@"generalBlurValue"]];
-        darkeningValueHistory = [NSNumber numberWithDouble: ([settings doubleForKey:@"historyDarkeningValue"] * .1)];
-        darkeningValueGeneral = [NSNumber numberWithDouble: ([settings doubleForKey:@"generalDarkeningValue"] * .1)];
-        lockscreenColoring = [UIColor colorFromHexString:[colorSettings objectForKey:@"lockscreenColors"]];
-        notificationCenterColoring = [UIColor colorFromHexString:[colorSettings objectForKey:@"notificationCenterColors"]];
         
-        //NSLog(@"nine_TWEAK | %@", [colorSettings objectForKey:@"lockscreenColors"]);
-        //NSLog(@"nine_TWEAK | %@", lockscreenColoring);
-        lockscreenColoring = [UIColor blackColor];
-        notificationCenterColoring = [UIColor blackColor];
         
         if(!self.view){
             self.view = [[UIView alloc] initWithFrame:screenFrame];
@@ -71,13 +49,7 @@ extern BOOL isUILocked();
         
         // NC blur
         if(!self.blurHistoryEffectView){
-            /*
-            UIBlurEffect *blurEffect = [UIBlurEffect effectWithBlurRadius:blurValueHistory.doubleValue];
-            self.blurHistoryEffectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
-            
-            self.blurHistoryEffectView.backgroundColor = [notificationCenterColoring colorWithAlphaComponent:darkeningValueHistory.doubleValue];
-            */
-            
+            // The BSUIBackdropView has so much customization its a little insane. Sort of unusual way to implement however.
             _UIBackdropViewSettings *settings = [[objc_getClass("_UIBackdropViewSettingsNineHistory") alloc] init];
             self.blurHistoryEffectView = [[objc_getClass("BSUIBackdropView") alloc] initWithSettings:settings];
             self.blurHistoryEffectView.frame = frame;
@@ -87,13 +59,6 @@ extern BOOL isUILocked();
         
         // lockscreen blur
         if(!self.blurEffectView){
-            
-            /*
-            UIBlurEffect *blurEffect = [UIBlurEffect effectWithBlurRadius:blurValueGeneral.doubleValue];
-            self.blurEffectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
-            self.blurEffectView.backgroundColor = [lockscreenColoring colorWithAlphaComponent:darkeningValueGeneral.doubleValue];
-             */
-            
             self.blurEffectView.frame = frame;
             self.blurEffectView.alpha = 0;
             _UIBackdropViewSettings *settings = [[objc_getClass("_UIBackdropViewSettingsNineLock") alloc] init];
@@ -106,7 +71,7 @@ extern BOOL isUILocked();
     return self;
 }
 
-
+// Did someone say sharedInstance?
 + (instancetype)sharedInstance {
     static TCBackgroundViewController *sharedInstance = nil;
     static dispatch_once_t onceToken; // onceToken = 0

@@ -33,7 +33,7 @@
             <key>label</key>
             <string>Settings</string>
             <key>footerText</key>
-            <string>Extend notification cell to screen edge. Recommend disabling for iPads.</string>
+            <string>Extend notification cell to screen edge. Recommend disabling for iPads. Does not apply when notifications are disabled.</string>
         </dict>
         <dict>
             <key>cell</key>
@@ -59,7 +59,21 @@
             <key>key</key>
             <string>separatorsEnabled</string>
             <key>label</key>
-            <string>Enable separators</string>
+            <string>Enable cell separators</string>
+            <key>PostNotification</key>
+            <string>com.thecasle.nineprefs/ReloadPrefs</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSSwitchCell</string>
+            <key>default</key>
+            <true/>
+            <key>defaults</key>
+            <string>com.thecasle.nineprefs</string>
+            <key>key</key>
+            <string>notificationsEnabled</string>
+            <key>label</key>
+            <string>Enable notifications</string>
             <key>PostNotification</key>
             <string>com.thecasle.nineprefs/ReloadPrefs</string>
         </dict>
@@ -93,7 +107,7 @@
             <key>key</key>
             <string>clearBackgroundEnabled</string>
             <key>label</key>
-            <string>Clear Background</string>
+            <string>Transparent Background</string>
             <key>PostNotification</key>
             <string>com.thecasle.nineprefs/ReloadPrefs</string>
         </dict>

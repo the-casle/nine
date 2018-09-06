@@ -16,15 +16,14 @@ static UIColor *lockscreenColoring;
     if(self = [super init]){
         // load preferences
         HBPreferences *settings = [[HBPreferences alloc] initWithIdentifier:@"com.thecasle.nineprefs"];
-        HBPreferences *colorSettings = [[HBPreferences alloc] initWithIdentifier:@"com.thecasle.nineprefs.color"];
         [settings registerDefaults:@{
                                      @"generalBlurValue": @12,
                                      @"generalDarkeningValue":@1,
                                      }];
         blurValueGeneral = [NSNumber numberWithDouble: [settings doubleForKey:@"generalBlurValue"]];
         darkeningValueGeneral = [NSNumber numberWithDouble: ([settings doubleForKey:@"generalDarkeningValue"] * .1)];
-        lockscreenColoring = [UIColor colorFromHexString:[colorSettings objectForKey:@"lockscreenColors"]];
-        lockscreenColoring = [UIColor blackColor];
+        lockscreenColoring = LCPParseColorString([settings objectForKey:@"lockscreenColors"], @"#000000");
+        //lockscreenColoring = [UIColor blackColor];
         
         //self = [[objc_getClass("_UIBackdropViewSettingsBlur") alloc] init];
         
@@ -57,7 +56,7 @@ static UIColor *lockscreenColoring;
     self.grayscaleTintMaskAlpha = 1;
     
     self.usesColorTintView = YES;
-    self.colorTint = [UIColor blackColor];
+    self.colorTint = lockscreenColoring;
     self.colorTintMaskAlpha = 1;
     self.colorTintAlpha = darkeningValueGeneral.doubleValue;
 }

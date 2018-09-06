@@ -4,7 +4,8 @@ TWEAK_NAME = nine
 nine_FILES = $(wildcard *.xm *.mm CustomWorks/*/*.m)
 nine_PRIVATE_FRAMEWORKS = UIKit
 nine_EXTRA_FRAMEWORKS = Cephei
-nine_LDFLAGS += -lCSColorPicker
+nine_LIBRARIES = colorpicker
+
 
 include $(THEOS_MAKE_PATH)/tweak.mk
 
