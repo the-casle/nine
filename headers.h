@@ -32,6 +32,9 @@ extern "C" UIColor *LCPParseColorString(NSString *colorStringFromPrefs, NSString
 
 @end
 
+@interface SpringBoard
+-(int)nowPlayingProcessPID;
+@end
 
 @interface NCNotificationContentView
 -(id) _secondaryTextView;

@@ -1,7 +1,7 @@
 include $(THEOS)/makefiles/common.mk
 
 BUNDLE_NAME = nineprefs
-nineprefs_FILES = NINERootListController.m NINEHeaderCell.m
+nineprefs_FILES = $(wildcard *.m)
 nineprefs_INSTALL_PATH = /Library/PreferenceBundles
 nineprefs_FRAMEWORKS = UIKit
 nineprefs_PRIVATE_FRAMEWORKS = Preferences

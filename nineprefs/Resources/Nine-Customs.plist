@@ -12,7 +12,7 @@
             <key>label</key>
             <string>Lockscreen</string>
             <key>footerText</key>
-            <string>Lockscreen darkening.</string>
+            <string>Lockscreen tint alpha.</string>
         </dict>
         <dict>
             <key>cellClass</key>
@@ -34,22 +34,15 @@
         </dict>
         <dict>
             <key>cell</key>
-            <string>PSLinkCell</string>
+            <string>PSTableCell</string>
             <key>cellClass</key>
-            <string>PFSimpleLiteColorCell</string>
-            <key>libcolorpicker</key>
-            <dict>
-                <key>defaults</key>
-                <string>com.thecasle.nineprefs</string>
-                <key>key</key>
-                <string>lockscreenColors</string>
-                <key>fallback</key>
-                <string>#000000</string>
-                <key>PostNotification</key>
-                <string>com.thecasle.nineprefs/ReloadPrefs</string>
-                <key>alpha</key>
-                <false/> <!-- <true/> or <false/> Show alpha slider -->
-            </dict>
+            <string>HBColorPickerCell</string>
+            <key>defaults</key>
+            <string>com.thecasle.nineprefs</string>
+            <key>PostNotification</key>
+            <string>com.thecasle.nineprefs/ReloadPrefs</string>
+            <key>key</key>
+            <string>lockscreenColors</string>
             <key>label</key>
             <string>Lockscreen color</string>
         </dict>
@@ -76,10 +69,40 @@
         <dict>
             <key>cell</key>
             <string>PSGroupCell</string>
+            <key>footerText</key>
+            <string>Lockscreen saturation.</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSSliderCell</string>
+            <key>cellClass</key>
+            <string>HBDiscreteSliderTableCell</string>
+            <key>default</key>
+            <real>12</real>
+            <key>defaults</key>
+            <string>com.thecasle.nineprefs</string>
+            <key>showValue</key>
+            <true/>
+            <key>key</key>
+            <string>generalSaturationValue</string>
+            <key>label</key>
+            <string>Discrete</string>
+            <key>max</key>
+            <real>30</real>
+            <key>min</key>
+            <real>0</real>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSGroupCell</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSGroupCell</string>
             <key>label</key>
             <string>Notification Center</string>
             <key>footerText</key>
-            <string>Notification Center darkening.</string>
+            <string>Notification Center tint alpha.</string>
         </dict>
         <dict>
             <key>cellClass</key>
@@ -101,22 +124,15 @@
         </dict>
         <dict>
             <key>cell</key>
-            <string>PSLinkCell</string>
+            <string>PSTableCell</string>
             <key>cellClass</key>
-            <string>PFSimpleLiteColorCell</string>
-            <key>libcolorpicker</key>
-            <dict>
-                <key>defaults</key>
-                <string>com.thecasle.nineprefs.color</string>
-                <key>key</key>
-                <string>notificationCenterColors</string>
-                <key>fallback</key>
-                <string>#000000</string>
-                <key>PostNotification</key>
-                <string>com.thecasle.nineprefs/ReloadPrefs</string>
-                <key>alpha</key>
-                <false/> <!-- <true/> or <false/> Show alpha slider -->
-            </dict>
+            <string>HBColorPickerCell</string>
+            <key>defaults</key>
+            <string>com.thecasle.nineprefs</string>
+            <key>PostNotification</key>
+            <string>com.thecasle.nineprefs/ReloadPrefs</string>
+            <key>key</key>
+            <string>notificationCenterColors</string>
             <key>label</key>
             <string>Notification center color</string>
         </dict>
@@ -137,6 +153,32 @@
             <string>Discrete</string>
             <key>max</key>
             <real>10</real>
+            <key>min</key>
+            <real>0</real>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSGroupCell</string>
+            <key>footerText</key>
+            <string>Notification center saturation.</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSSliderCell</string>
+            <key>cellClass</key>
+            <string>HBDiscreteSliderTableCell</string>
+            <key>default</key>
+            <real>12</real>
+            <key>defaults</key>
+            <string>com.thecasle.nineprefs</string>
+            <key>showValue</key>
+            <true/>
+            <key>key</key>
+            <string>historySaturationValue</string>
+            <key>label</key>
+            <string>Discrete</string>
+            <key>max</key>
+            <real>30</real>
             <key>min</key>
             <real>0</real>
         </dict>

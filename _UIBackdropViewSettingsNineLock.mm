@@ -6,8 +6,10 @@
 
 static NSNumber *blurValueGeneral;
 static NSNumber *darkeningValueGeneral;
+static NSNumber *saturationValueGeneral;
 static UIColor *lockscreenColoring;
 
+static NSString *lockHex;
 
 //----------------------------------------------------------------
 @implementation _UIBackdropViewSettingsNineLock
@@ -19,11 +21,15 @@ static UIColor *lockscreenColoring;
         [settings registerDefaults:@{
                                      @"generalBlurValue": @12,
                                      @"generalDarkeningValue":@1,
+                                     @"generalSaturationValue":@12,
                                      }];
+        [settings registerObject:&lockHex default:@"#000000" forKey: @"lockscreenColors"];
+        
+        lockscreenColoring = LCPParseColorString(lockHex, @"#000000");
+        
         blurValueGeneral = [NSNumber numberWithDouble: [settings doubleForKey:@"generalBlurValue"]];
         darkeningValueGeneral = [NSNumber numberWithDouble: ([settings doubleForKey:@"generalDarkeningValue"] * .1)];
-        lockscreenColoring = LCPParseColorString([settings objectForKey:@"lockscreenColors"], @"#000000");
-        //lockscreenColoring = [UIColor blackColor];
+        saturationValueGeneral = [NSNumber numberWithDouble: ([settings doubleForKey:@"generalSaturationValue"] * .1)];
         
         //self = [[objc_getClass("_UIBackdropViewSettingsBlur") alloc] init];
         
@@ -35,14 +41,14 @@ static UIColor *lockscreenColoring;
 -(void)setDefaultValues{
     
     self.appliesTintAndBlurSettings = YES;
-    self.scale = .25;
+    self.scale = (saturationValueGeneral.doubleValue >= 5) ? .25 : 1;
     self.usesBackdropEffectView = YES;
     self.backdropVisible = YES;
     self.filterMaskAlpha = 1;
     self.legibleColor = [UIColor whiteColor];
     self.enabled = YES;
     self.usesContentView = YES;
-    self.saturationDeltaFactor = 1.25;
+    self.saturationDeltaFactor = saturationValueGeneral.doubleValue;
     
     self.blurRadius = blurValueGeneral.doubleValue;
     self.blurQuality = @"default";

@@ -13,10 +13,14 @@ static BOOL enableBannerSection;
 static BOOL enableClearBackground;
 static BOOL enableSeparators;
 static BOOL enableNotifications;
+static BOOL enableHideClock;
 
 // palette
 static BOOL paletteEnabled;
+// colorbanners2
+static BOOL colorBannersEnabled;
 
+//static UIView *xenWidgetController;
 
 // Data required for the isOnLockscreen() function
 BOOL isUILocked() {
@@ -195,14 +199,53 @@ static id _container;
 }
 %end
 
-/*
+
 %hook NCNotificationListCollectionView
 -(UIEdgeInsets) adjustedContentInset {
-    if(!isOnLockscreen()){
-        UIEdgeInsets inset = %orig;
-        if(@available(iOS 11.0, *)) inset.top = self.safeAreaInsets.top;
-        return inset;
+    UIEdgeInsets inset = %orig;
+    if(enableHideClock){
+        if(!isOnLockscreen()  && [(SpringBoard*)[UIApplication sharedApplication] nowPlayingProcessPID] == 0){
+            if(@available(iOS 11.0, *)) inset.top = self.safeAreaInsets.top;
+            return inset;
+        } else if(!isOnLockscreen()  && [(SpringBoard*)[UIApplication sharedApplication] nowPlayingProcessPID] > 0){
+            if(@available(iOS 11.0, *)) inset.top -= (205 - self.safeAreaInsets.top);
+            return inset;
+        } else return %orig;
     } else return %orig;
+    
+}
+/*
+-(CGPoint) contentOffset {
+    CGPoint offset = %orig;
+    if(offset.y >= 205){
+        xenWidgetController.hidden = YES;
+    } else {
+        xenWidgetController.hidden = NO;
+    }
+    return %orig;
+}
+ */
+-(CGPoint) minimumContentOffset {
+    if(enableHideClock){
+        CGPoint point = %orig;
+        if(!isOnLockscreen()  && [(SpringBoard*)[UIApplication sharedApplication] nowPlayingProcessPID] == 0){
+            if(@available(iOS 11.0, *)) point.y = self.safeAreaInsets.top;
+        } else if(!isOnLockscreen()  && [(SpringBoard*)[UIApplication sharedApplication] nowPlayingProcessPID] > 0){
+            if(@available(iOS 11.0, *))point.y -= (205 - self.safeAreaInsets.top);
+        }
+        return point;
+    } else return %orig;
+}
+
+%end
+/*
+// For xen
+%hook XENHWidgetLayerContainerView
+-(id) init {
+    if((self = %orig)){
+        if(!xenWidgetController) xenWidgetController = ((UIView *)self);
+    }
+    return nil;
 }
 %end
 */
@@ -223,13 +266,13 @@ static id _container;
 -(void)layoutSubviews {
     %orig;
     //NSLog(@"nine_TWEAK active: %i visible: %i",[[%c(SBLockScreenManager) sharedInstance] isLockScreenActive], [[%c(SBLockScreenManager) sharedInstance] isLockScreenVisible]);
-    if (!isOnLockscreen()) {
+    if (!isOnLockscreen() && enableHideClock) {
         /*[UIView animateWithDuration:.5
                               delay:.2
                             options:UIViewAnimationOptionCurveEaseOut
                          animations:^{((UIView*)self).alpha = 0;}
                          completion:nil];*/
-        //((UIView*)self).hidden = YES; // maybe make this optional?
+        ((UIView*)self).hidden = YES; // maybe make this optional?
         //if (_lockGlyph) ((UIView*)_lockGlyph).hidden = YES;
         /*
         if (_envWindow){
@@ -239,7 +282,7 @@ static id _container;
         */
     }
     else {
-        ((UIView*)self).alpha = 1;
+        ((UIView*)self).hidden = NO;
         //[[%c(SBWallpaperController) sharedInstance] setVariant:0];
         //if (_lockGlyph) ((UIView*)_lockGlyph).hidden = NO;
         
@@ -398,20 +441,26 @@ static id _container;
         if(enableBannerSection){
             
             MSHookIvar<UIImageView *>(self, "_shadowView").hidden = YES;
-            
-            //Sets all text to white color
-            [[self _headerContentView] setTintColor:[UIColor whiteColor]];
-            [[[[self _headerContentView] _dateLabel] _layer] setFilters:nil];
-            [[[[self _headerContentView] _titleLabel] _layer] setFilters:nil];
-            for(id object in self.allSubviews){
-                if([object isKindOfClass:%c(NCNotificationContentView)]){
-                    [[object _secondaryTextView] setTextColor:[UIColor whiteColor]];
-                    [[object _primaryLabel] setTextColor:[UIColor whiteColor]];
-                    [[object _primarySubtitleLabel] setTextColor:[UIColor whiteColor]];
+            if(colorBannersEnabled){
+                for(id object in ((UIView *)[self backgroundMaterialView]).allSubviews){
+                    if ([object respondsToSelector:@selector(_cornerRadius)]) [((UIView *) object) _setCornerRadius:0];
                 }
+            } else {
+                //Sets all text to white color
+                [[self _headerContentView] setTintColor:[UIColor whiteColor]];
+                [[[[self _headerContentView] _dateLabel] _layer] setFilters:nil];
+                [[[[self _headerContentView] _titleLabel] _layer] setFilters:nil];
+                for(id object in self.allSubviews){
+                    if([object isKindOfClass:%c(NCNotificationContentView)]){
+                        [[object _secondaryTextView] setTextColor:[UIColor whiteColor]];
+                        [[object _primaryLabel] setTextColor:[UIColor whiteColor]];
+                        [[object _primarySubtitleLabel] setTextColor:[UIColor whiteColor]];
+                    }
+                }
+                
+                [[self backgroundMaterialView] setHidden:YES];
             }
             
-            [[self backgroundMaterialView] setHidden:YES];
             MSHookIvar<MTMaterialView *>(self, "_mainOverlayView").hidden = true;
             
             self.frameWidth = UIScreen.mainScreen.bounds.size.width;
@@ -484,9 +533,11 @@ static id _container;
                 self.notifEffectView.frameWidth = UIScreen.mainScreen.bounds.size.width;
                 
                 self.notifEffectView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+                if(!colorBannersEnabled){
+                    [self addSubview:self.notifEffectView];
+                    [self sendSubviewToBack:self.notifEffectView];
+                }
                 
-                [self addSubview:self.notifEffectView];
-                [self sendSubviewToBack:self.notifEffectView];
             }
             
             // enable built in grabber and coloring
@@ -898,7 +949,10 @@ static void loadPrefs() {
     if([[NSFileManager defaultManager] fileExistsAtPath: @"/Library/MobileSubstrate/DynamicLibraries/Palette.dylib"]){
         paletteEnabled = [settings objectForKey:@"bannersEnabled"] ? [[settings objectForKey:@"bannersEnabled"] boolValue] : NO;
     }
-    
+    NSMutableDictionary *colorBannerSettings = [[NSMutableDictionary alloc] initWithContentsOfFile:@"/var/mobile/Library/Preferences/com.golddavid.colorbanners2.plist"];
+    if([[NSFileManager defaultManager] fileExistsAtPath: @"/Library/MobileSubstrate/DynamicLibraries/ColorBanners2.dylib"]){
+        colorBannersEnabled = [colorBannerSettings objectForKey:@"BannersEnabled"] ? [[colorBannerSettings objectForKey:@"BannersEnabled"] boolValue] : NO;
+    }
 }
 
 %ctor {
@@ -919,6 +973,7 @@ static void loadPrefs() {
                                  @"clearBackgroundEnabled": @YES,
                                  @"separatorsEnabled": @YES,
                                  @"notificationsEnabled": @YES,
+                                 @"hideClockEnabled": @NO,
                                  }];
     BOOL tweakEnabled = [settings boolForKey:@"tweakEnabled"];
     enableBanners = [settings boolForKey:@"bannersEnabled"];
@@ -931,9 +986,11 @@ static void loadPrefs() {
     enableClearBackground = [settings boolForKey:@"clearBackgroundEnabled"];
     enableSeparators = [settings boolForKey:@"separatorsEnabled"];
     enableNotifications = [settings boolForKey:@"notificationsEnabled"];
+    enableHideClock = [settings boolForKey:@"hideClockEnabled"];
     
     loadPrefs();
     CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, (CFNotificationCallback)loadPrefs, CFSTR("ch.mdaus.palette"), NULL, CFNotificationSuspensionBehaviorCoalesce);
+    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, (CFNotificationCallback)loadPrefs, CFSTR("com.golddavid.colorbanners2"), NULL, CFNotificationSuspensionBehaviorCoalesce);
     
 
     if(tweakEnabled) {

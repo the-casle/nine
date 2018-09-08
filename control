@@ -6,6 +6,7 @@ Architecture: iphoneos-arm
 Description: Reworks the Notification Center
  iOS nine Notification Center and lock screen
  - Beta version
+ - Finishing the customization
 Maintainer: Jake Kaslewicz <jakaslewicz@gmail.com>
 Author: Jake Kaslewicz
 Section: Tweaks

@@ -6,8 +6,10 @@
 
 static NSNumber *blurValueHistory;
 static NSNumber *darkeningValueHistory;
+static NSNumber *saturationValueHistory;
 static UIColor *notificationCenterColoring;
 
+static NSString *notifHex;
 
 //----------------------------------------------------------------
 @implementation _UIBackdropViewSettingsNineHistory
@@ -16,17 +18,19 @@ static UIColor *notificationCenterColoring;
     if(self = [super init]){
         // load preferences
         HBPreferences *settings = [[HBPreferences alloc] initWithIdentifier:@"com.thecasle.nineprefs"];
-        HBPreferences *colorSettings = [[HBPreferences alloc] initWithIdentifier:@"com.thecasle.nineprefs.color"];
         [settings registerDefaults:@{
                                      @"historyBlurValue": @20,
                                      @"historyDarkeningValue":@4,
+                                     @"historySaturationValue":@12,
                                      }];
+        
+        [settings registerObject:&notifHex default:@"#000000" forKey: @"notificationCenterColors"];
+        notificationCenterColoring = LCPParseColorString(notifHex, @"#000000");
+        
         blurValueHistory = [NSNumber numberWithDouble: [settings doubleForKey:@"historyBlurValue"]];
         darkeningValueHistory = [NSNumber numberWithDouble: ([settings doubleForKey:@"historyDarkeningValue"] * .1)];
+        saturationValueHistory = [NSNumber numberWithDouble: ([settings doubleForKey:@"historySaturationValue"] * .1)];
 
-        notificationCenterColoring = LCPParseColorString([colorSettings objectForKey:@"notificationCenterColors"], @"#000000");
-        NSLog(@"nine_TWEAK | %@ and %@", notificationCenterColoring, [colorSettings objectForKey:@"notificationCenterColors"]);
-        //notificationCenterColoring = [UIColor blackColor];
         
         //self = [[objc_getClass("_UIBackdropViewSettingsBlur") alloc] init];
         
@@ -38,14 +42,14 @@ static UIColor *notificationCenterColoring;
 -(void)setDefaultValues{
     
     self.appliesTintAndBlurSettings = YES;
-    self.scale = .25;
+    self.scale = (saturationValueHistory.doubleValue >= 5) ? .25 : 1;
     self.usesBackdropEffectView = YES;
     self.backdropVisible = YES;
     self.filterMaskAlpha = 1;
     self.legibleColor = [UIColor whiteColor];
     self.enabled = YES;
     self.usesContentView = YES;
-    self.saturationDeltaFactor = 1.25;
+    self.saturationDeltaFactor = saturationValueHistory.doubleValue;
     
     self.blurRadius = blurValueHistory.doubleValue;
     self.blurQuality = @"default";
