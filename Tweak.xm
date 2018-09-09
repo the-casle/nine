@@ -14,6 +14,7 @@ static BOOL enableClearBackground;
 static BOOL enableSeparators;
 static BOOL enableNotifications;
 static BOOL enableHideClock;
+static BOOL enableHideText;
 
 // palette
 static BOOL paletteEnabled;
@@ -186,7 +187,8 @@ static id _container;
 // bigger "No Older Notifications" text
 -(void)layoutSubviews {
     %orig;
-    MSHookIvar<UILabel *>(self, "_revealHintTitle").font = [UIFont fontWithName:@"HelveticaNeue-Light" size:24.0];
+    if(!enableHideText) MSHookIvar<UILabel *>(self, "_revealHintTitle").font = [UIFont fontWithName:@"HelveticaNeue-Light" size:24.0];
+        else MSHookIvar<UILabel *>(self, "_revealHintTitle").hidden = YES;
 }
 %end
 
@@ -974,6 +976,7 @@ static void loadPrefs() {
                                  @"separatorsEnabled": @YES,
                                  @"notificationsEnabled": @YES,
                                  @"hideClockEnabled": @NO,
+                                 @"hideTextEnabled":@NO,
                                  }];
     BOOL tweakEnabled = [settings boolForKey:@"tweakEnabled"];
     enableBanners = [settings boolForKey:@"bannersEnabled"];
@@ -987,6 +990,7 @@ static void loadPrefs() {
     enableSeparators = [settings boolForKey:@"separatorsEnabled"];
     enableNotifications = [settings boolForKey:@"notificationsEnabled"];
     enableHideClock = [settings boolForKey:@"hideClockEnabled"];
+    enableHideText = [settings boolForKey:@"hideTextEnabled"];
     
     loadPrefs();
     CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, (CFNotificationCallback)loadPrefs, CFSTR("ch.mdaus.palette"), NULL, CFNotificationSuspensionBehaviorCoalesce);
