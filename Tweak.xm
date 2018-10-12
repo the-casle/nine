@@ -382,14 +382,20 @@ static id _container;
 }
 
 %end
-/*
+
 %hook SBCoverSheetPositionView
--(void) layoutSubviews {
+-(void) setProgress:(CGFloat) progress {
     %orig;
-    [self contentView].clipsToBounds = NO;
+    
+    UIView *backgroundContent = self.contentView;
+    //UIView *background = ((SBCoverSheetSlidingViewController *)self._viewControllerForAncestor).panelBackgroundContainerView;
+    backgroundContent.frameY = 0;
+    CGRect bounds = backgroundContent.bounds;
+    bounds.size.height = progress == 0 ? backgroundContent.frameHeight * .00001 : - backgroundContent.frameHeight * .5;
+    backgroundContent.bounds = bounds;
 }
 %end
-
+/*
 %hook SBUIBackgroundView
 -(void) setFrame:(CGRect) rect {
     rect.origin.y -= 40;
