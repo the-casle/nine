@@ -273,17 +273,11 @@ extern "C" UIColor *LCPParseColorString(NSString *colorStringFromPrefs, NSString
 @property (nonatomic,retain) UIWindow * hostingWindow;
 @end
 
-@interface SBCoverSheetPositionView
-@property (nonatomic, retain) UIView *contentView;
-- (id)_viewControllerForAncestor;
-@end
-
 @interface SBCoverSheetPanelBackgroundContainerView : UIView
 @end
 
 @interface SBCoverSheetSlidingViewController
 - (long long)dismissalSlidingMode;
-@property (nonatomic, retain) SBCoverSheetPanelBackgroundContainerView *panelBackgroundContainerView;
 @end
 
 @interface SBDashBoardQuickActionsViewController : UIViewController
