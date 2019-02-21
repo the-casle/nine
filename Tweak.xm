@@ -187,8 +187,7 @@ static id _container;
 // bigger "No Older Notifications" text
 -(void)layoutSubviews {
     %orig;
-    if(!enableHideText) MSHookIvar<UILabel *>(self, "_revealHintTitle").font = [UIFont fontWithName:@"HelveticaNeue-Light" size:24.0];
-        else MSHookIvar<UILabel *>(self, "_revealHintTitle").hidden = YES;
+    if(enableHideText) MSHookIvar<UILabel *>(self, "_revealHintTitle").hidden = YES;
 }
 %end
 
