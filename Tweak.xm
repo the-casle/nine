@@ -23,21 +23,17 @@ static BOOL colorBannersEnabled;
 
 //static UIView *xenWidgetController;
 
-// Data required for the isOnLockscreen() function
+static id _instanceController;
+static id _container;
+
+// Data required for the isOnLockscreen() function. Before anyone says this is overly complicated, it also knows when the iPX is dismissing (hence the sliding controller).
 BOOL isUILocked() {
-    long count = [[[%c(SBFPasscodeLockTrackerForPreventLockAssertions) sharedInstance] valueForKey:@"_assertions"] count];
-    if (count == 0) return YES; // array is empty
-    if (count == 1) {
-        if ([[[[[[%c(SBFPasscodeLockTrackerForPreventLockAssertions) sharedInstance] valueForKey:@"_assertions"] allObjects] objectAtIndex:0] identifier] isEqualToString:@"UI unlocked"]) return NO; // either device is unlocked or an app is opened (from the ones allowed on lockscreen). Luckily system gives us enough info so we can tell what happened
-        else return YES; // if there are more than one should be safe enough to assume device is unlocked
-    }
+    if(MSHookIvar<NSUInteger>([objc_getClass("SBLockStateAggregator") sharedInstance], "_lockState") == 3) return YES;
     else return NO;
 }
 
 static BOOL isOnCoverSheet; // the data that needs to be analyzed
-
 BOOL isOnLockscreen() {
-    //NSLog(@"nine_TWEAK | %d", isOnCoverSheet);
     if(isUILocked()){
         isOnCoverSheet = YES; // This is used to catch an exception where it was locked, but it the isOnCoverSheet didnt update to reflect.
         return YES;
@@ -46,27 +42,6 @@ BOOL isOnLockscreen() {
     else if(!isUILocked() && isOnCoverSheet == NO) return NO;
     else return NO;
 }
-
-static id _instance;
-static id _instanceController;
-static id _lockGlyph;
-static id _container;
-//static id _envWindow = nil;
-
-%hook SBFPasscodeLockTrackerForPreventLockAssertions
-- (id) init {
-    if (_instance == nil) _instance = %orig;
-    else %orig; // just in case it needs more than one instance
-    return _instance;
-}
-
-%new
-// add a shared instance so we can use it later
-+ (id) sharedInstance {
-    if (!_instance) return [[%c(SBFPasscodeLockTrackerForPreventLockAssertions) alloc] init];
-    return _instance;
-}
-%end
 
 // Setting isOnCoverSheet properly, actually works perfectly
 %hook SBCoverSheetSlidingViewController
@@ -83,39 +58,10 @@ static id _container;
 
 %group ClearBackground
 %hook SBCoverSheetUnlockedEnvironmentHostingWindow
-// makes the cover sheet transparent
-/*
--(id) init{
-    if((self = %orig)){
-        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(willHideCoverSheetNotification:) name:@"SBCoverSheetWillDismissNotification" object:nil];
-    }
-    return self;
-}
- */
 -(void)setHidden:(BOOL)arg1 {
     if (isOnLockscreen()) %orig;
     else %orig(NO);
-        //NSLog(@"nine_TWEAK setting hidden");
 }
-/*
--(BOOL)hidden {
-    return (isOnLockscreen()) ? %orig : NO;
-}
-*/
--(void)layoutSubviews {
-    %orig;
-    //if (!_envWindow) _envWindow = self; // save instance
-    //self.hidden = (isOnLockscreen()) ? NO : YES;
-}
-/*
-%new
--(void) willHideCoverSheetNotification: (NSNotification *)notification {
-    if (_envWindow){
-        ((UIWindow*)_envWindow).hidden = NO;
-    }
-
-}
-*/
 %end
 
 %hook SBCoverSheetSlidingViewController
@@ -123,7 +69,6 @@ static id _container;
     if(isUILocked())[[objc_getClass("SBWallpaperController") sharedInstance] setVariant:0];
     if(!isOnLockscreen())[[%c(SBWallpaperController) sharedInstance] setVariant:1];
     
-    //NSLog(@"nine_TWEAK | updating info %i with %i", isOnLockscreen(), isOnCoverSheet);
     if(isOnLockscreen()){
         ((UIView*)[%c(SBCoverSheetPanelBackgroundContainerView) sharedInstance]).alpha = 1;
         if([[%c(SBCoverSheetUnlockedEnvironmentHostingViewController) sharedInstance] respondsToSelector:@selector(maskingView)])((SBCoverSheetUnlockedEnvironmentHostingViewController *)[%c(SBCoverSheetUnlockedEnvironmentHostingViewController) sharedInstance]).maskingView.hidden = NO; /*This is 11.1 only I believe*/
@@ -157,7 +102,6 @@ static id _container;
 
 %hook SBWallpaperController
 -(void)setVariant:(long long) arg1 {
-    //NSLog(@"nine_TWEAK %d", (int)isOnLockscreen());
     if(!isOnLockscreen()) {
         %orig(1);
     } else {
@@ -215,17 +159,6 @@ static id _container;
     } else return %orig;
     
 }
-/*
--(CGPoint) contentOffset {
-    CGPoint offset = %orig;
-    if(offset.y >= 205){
-        xenWidgetController.hidden = YES;
-    } else {
-        xenWidgetController.hidden = NO;
-    }
-    return %orig;
-}
- */
 -(CGPoint) minimumContentOffset {
     if(enableHideClock){
         CGPoint point = %orig;
@@ -250,55 +183,12 @@ static id _container;
 }
 %end
 */
-/*
-%hook SBDashBoardCombinedListViewController
--(double)topContentInset{
-    if(!isOnLockscreen()){
-        double inset = %orig;
-        if(@available(iOS 11.0, *)) inset = self.view.safeAreaInsets.top;
-        
-        return inset;
-    } else return %orig;
-}
-%end
-*/
 %hook SBFLockScreenDateView
-// hide clock && lockglyph && update wallpaper && update envwindow
+// hide clock
 -(void)layoutSubviews {
     %orig;
-    //NSLog(@"nine_TWEAK active: %i visible: %i",[[%c(SBLockScreenManager) sharedInstance] isLockScreenActive], [[%c(SBLockScreenManager) sharedInstance] isLockScreenVisible]);
-    if (!isOnLockscreen() && enableHideClock) {
-        /*[UIView animateWithDuration:.5
-                              delay:.2
-                            options:UIViewAnimationOptionCurveEaseOut
-                         animations:^{((UIView*)self).alpha = 0;}
-                         completion:nil];*/
-        ((UIView*)self).hidden = YES; // maybe make this optional?
-        //if (_lockGlyph) ((UIView*)_lockGlyph).hidden = YES;
-        /*
-        if (_envWindow){
-            ((UIWindow*)_envWindow).hidden = NO;
-            
-        }
-        */
-    }
-    else {
-        ((UIView*)self).hidden = NO;
-        //[[%c(SBWallpaperController) sharedInstance] setVariant:0];
-        //if (_lockGlyph) ((UIView*)_lockGlyph).hidden = NO;
-        
-    }
-}
-%end
-
-%hook PKFingerprintGlyphView
-// keep an instance of lockglpyh and hide it later in a method that gets called when it shows
--(id)init {
-    if (!_lockGlyph) {
-        _lockGlyph = %orig;
-        return _lockGlyph;
-    }
-    return %orig;
+    if (!isOnLockscreen() && enableHideClock) ((UIView*)self).hidden = YES;
+    else ((UIView*)self).hidden = NO;
 }
 %end
 
@@ -321,45 +211,7 @@ static id _container;
 
 }
 %end
-/*
-%hook WGWidgetHostingViewController
--(id)widgetInfo{
-    NSNotificationCenter* nc = [NSNotificationCenter defaultCenter];
-    //if(alphaOfBackground != vale){
-        NSDictionary* userInfo = @{@"content": @(self.activeDisplayMode)};
-        [nc postNotificationName:@"alphaReceived" object:self userInfo:userInfo];
-        NSLog(@"nine_TWEAK posting content notification");
-        
-    //}
-    
-    return %orig;
-}
-%end
 
-%hook WGWidgetPlatterView
--(void) layoutSubviews{
-    %orig;
-    MSHookIvar<MTMaterialView *>(self, "_backgroundView").hidden = true;
-    MSHookIvar<MTMaterialView *>(self, "_mainOverlayView").hidden = true;
-}
-%end
-*/
-/*
-%hook SBPagedScrollView
--(void) setFrame:(CGRect) frame{
-    frame.origin.y = -175;
-    frame.size.height += 175;
-    %orig(frame);
-}
-%end
-
-%hook NCNotificationListCollectionView
--(void) setFrame:(CGRect) frame{
-    frame.size.height += 175;
-    %orig(frame);
-}
-%end
-*/
 %hook SBDashBoardViewController
 %property (nonatomic, retain) TCBackgroundViewController *backgroundCont;
 -(id)initWithPageViewControllers:(id)arg1 mainPageContentViewController:(id)arg2{
@@ -379,32 +231,7 @@ static id _container;
     MSHookIvar<UIView *>(((SBDashBoardView *)self.view).backgroundView, "_lightenSourceOverView").hidden = YES;
     MSHookIvar<UIView *>(((SBDashBoardView *)self.view).backgroundView, "_darkenSourceOverView").hidden = YES;
 }
-
 %end
-/*
-%hook SBCoverSheetPositionView
--(void) layoutSubviews {
-    %orig;
-    [self contentView].clipsToBounds = NO;
-}
-%end
-
-%hook SBUIBackgroundView
--(void) setFrame:(CGRect) rect {
-    rect.origin.y -= 40;
-    rect.size.height += 40;
-    %orig(rect);
-    
-}
-%end
-*/
-/*
-%hook _UIBackdropViewSettings
--(void)computeOutputSettingsUsingModel:(id)arg1 {
-    //%orig;
-}
-%end
-*/
 
  // Used to update separators;
 %hook NCNotificationCombinedListViewController
@@ -428,9 +255,6 @@ static id _container;
 
 -(void) layoutSubviews{
     %orig;
-    // banner check, took a while to get right
-    
-    //if([[[self _viewControllerForAncestor] view].superview isKindOfClass:%c(UITransitionView)]){
     if(![[self _viewControllerForAncestor] respondsToSelector:@selector(delegate)]){
         return;
     }
@@ -562,45 +386,6 @@ static id _container;
     } else {
         // not a banner
         if(enableNotifications){
-            /*
-             UIColor *bottomColor = [[UIColor blueColor] colorWithAlphaComponent:.4];
-             
-             // Create the gradient
-             if([self respondsToSelector:@selector(backgroundView)]){
-             CALayer *maskView = [[CALayer alloc] init];
-             maskView.frame = self.backgroundView.bounds;
-             
-             CAGradientLayer *theVertGradient = [CAGradientLayer layer];
-             theVertGradient.colors = [NSArray arrayWithObjects: [UIColor clearColor], (id)bottomColor.CGColor, (id)bottomColor.CGColor, [UIColor clearColor], nil];
-             theVertGradient.locations = [NSArray arrayWithObjects: [NSNumber numberWithDouble: .000], [NSNumber numberWithDouble: 0.3], [NSNumber numberWithDouble: 0.7],[NSNumber numberWithDouble: 1], [NSNumber numberWithDouble: 1], nil];
-             theVertGradient.startPoint = CGPointMake(0.5, 0.0);
-             theVertGradient.endPoint = CGPointMake(0.5, 1.0);
-             theVertGradient.frame = self.backgroundView.bounds;
-             /*
-             CAGradientLayer *theHorzGradient = [CAGradientLayer layer];
-             theHorzGradient.colors = [NSArray arrayWithObjects: [UIColor clearColor], (id)bottomColor.CGColor, [UIColor clearColor], nil];
-             theHorzGradient.locations = [NSArray arrayWithObjects: [NSNumber numberWithDouble: .005], [NSNumber numberWithDouble: 0.75], [NSNumber numberWithDouble: 1], [NSNumber numberWithDouble: 1], nil];
-             theHorzGradient.startPoint = CGPointMake(0.0, 0.5);
-             theHorzGradient.endPoint = CGPointMake(1.0, 0.5);
-             theHorzGradient.frame = self.backgroundView.bounds;
-             */
-            //[maskView addSublayer:theVertGradient];
-            //[maskView addSublayer:theHorzGradient];
-            /*
-             UIGraphicsBeginImageContextWithOptions(maskView.bounds.size, NO, 0.0);
-             [maskView renderInContext: UIGraphicsGetCurrentContext()];
-             UIImage *layerImage = UIGraphicsGetImageFromCurrentImageContext();
-             UIGraphicsEndImageContext();
-             maskView.contents = (id) layerImage.CGImage;
-             maskView.sublayers = nil;
-             */
-            /*
-             //Add gradient to view
-             self.backgroundView.layer.mask = theVertGradient;
-             self.backgroundView.alpha = 1;
-             }
-             */
-            
             if(self.backgroundView){
                 self.backgroundView.hidden = YES;
             }
@@ -729,71 +514,6 @@ static id _container;
     return enableBannerSection ? YES : %orig;
 }
 %end
-
-/*
-%hook _NCNotificationViewControllerView
--(void) setContentView{
-    %orig;
-    NCNotificationShortLookView *shortView = (NCNotificationShortLookView *)self.contentView;
-    
-    if(!shortView.notifEffectView){
-        UIBlurEffect *blurEffect = [UIBlurEffect effectWithBlurRadius:17];
-        shortView.notifEffectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
-        
-        // tint color
-        if(enableColorCube){
-            CCColorCube *colorCube = [[CCColorCube alloc] init];
-            UIImage *img = (UIImage *)[[shortView _headerContentView] icon];
-            UIColor *rgbWhite = [UIColor colorWithRed:1 green:1 blue:.8 alpha:1];
-            NSArray *imgColors = [colorCube extractBrightColorsFromImage:img avoidColor:rgbWhite count:4];
-            //UIColor *darkenedImgColor = imgColors[0];
-            
-            shortView.notifEffectView.backgroundColor = [imgColors[0] colorWithAlphaComponent:.65];
-        } else {
-            shortView.notifEffectView.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:.55];
-        }
-        
-        
-        shortView.notifEffectView.frame = shortView.bounds;
-        shortView.notifEffectView.frameX = 0;
-        shortView.notifEffectView.frameWidth = UIScreen.mainScreen.bounds.size.width;
-        
-        shortView.notifEffectView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-        
-        [shortView addSubview:shortView.notifEffectView];
-        [shortView sendSubviewToBack:shortView.notifEffectView];
-    }
-    
-    if(!shortView.pullTab && enableGrabber == YES){
-        shortView.pullTab = [[UIView alloc] initWithFrame:shortView.notifEffectView.frame];
-        
-        shortView.pullTab.frameHeight = 4;
-        shortView.pullTab.frameWidth = 34;
-        shortView.pullTab.frameX = (UIScreen.mainScreen.bounds.size.width / 2) - (shortView.pullTab.frameWidth / 2);
-        
-        [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
-        UIInterfaceOrientation interfaceOrientation = [[UIApplication sharedApplication] statusBarOrientation];
-        if(enableBanners){
-            if (UIDeviceOrientationIsPortrait(interfaceOrientation))
-            {
-                shortView.pullTab.frameY = shortView.notifEffectView.bounds.size.height + 23;
-            } else {
-                shortView.pullTab.frameY = shortView.notifEffectView.bounds.size.height - 9;
-            }
-        } else {
-            shortView.pullTab.frameY = shortView.notifEffectView.bounds.size.height - 9;
-        }
-        [[UIDevice currentDevice] endGeneratingDeviceOrientationNotifications];
-        
-        
-        shortView.pullTab.backgroundColor = [UIColor whiteColor];
-        [shortView.pullTab _setCornerRadius:2];
-        [shortView addSubview:shortView.pullTab];
-    }
-    
-}
-%end
-*/
 
 %hook NCNotificationListSectionHeaderView
 %property (nonatomic, retain) UIVisualEffectView *headerEffectView;
