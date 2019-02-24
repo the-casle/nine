@@ -85,6 +85,14 @@ BOOL isOnLockscreen() {
 }
 %end
 
+%hook _SBWallpaperWindow
+-(void) setWindowLevel:(CGFloat) level{
+    if(!isOnLockscreen()){
+        %orig(-5);
+    } else %orig;
+}
+%end
+
 %hook SBCoverSheetPanelBackgroundContainerView
 // removes the animation when opening cover sheet
 -(id) init{
@@ -239,9 +247,11 @@ BOOL isOnLockscreen() {
     %orig;
     if(enableSeparators){
         for(NCNotificationListCell *cell in self.collectionView.visibleCells){
-            NCNotificationShortLookView *shortView = ((NCNotificationShortLookView *)((_NCNotificationViewControllerView *)cell.contentViewController.view).contentView);
-            if([shortView isKindOfClass:%c(NCNotificationShortLookView)] && [shortView respondsToSelector:@selector(tcUpdateTopLine)]){
-                [shortView tcUpdateTopLine];
+            if([cell isKindOfClass:%c(NCNotificationListCell)]){
+                NCNotificationShortLookView *shortView = ((NCNotificationShortLookView *)((_NCNotificationViewControllerView *)cell.contentViewController.view).contentView);
+                if([shortView isKindOfClass:%c(NCNotificationShortLookView)] && [shortView respondsToSelector:@selector(tcUpdateTopLine)]){
+                    [shortView tcUpdateTopLine];
+                }
             }
         }
     }
@@ -496,7 +506,7 @@ BOOL isOnLockscreen() {
 %new
 -(void) tcUpdateTopLine{
     if([self._viewControllerForAncestor respondsToSelector:@selector(delegate)]){
-        if([((NCNotificationCombinedListViewController *)((NCNotificationShortLookViewController *)self._viewControllerForAncestor)._parentViewController).notificationPriorityList.requests firstObject] == ((NCNotificationShortLookViewController *)self._viewControllerForAncestor).notificationRequest){
+        if([((NCNotificationCombinedListViewController *)((NCNotificationShortLookViewController *)self._viewControllerForAncestor)._parentViewController).notificationPriorityList.allNotificationRequests firstObject] == ((NCNotificationShortLookViewController *)self._viewControllerForAncestor).notificationRequest){
             self.topLine.alpha = 0;
             self.topLine.hidden = NO;
             [UIView animateWithDuration:.3
@@ -534,10 +544,10 @@ BOOL isOnLockscreen() {
         self.headerEffectView.frameHeight = self.bounds.size.height - 10;
         
         // changing size
-        self.titleLabel.font = [UIFont fontWithName:@".SFUIDisplay" size:22.0];
-        CGPoint center = self.titleLabel.center;
+        self.headerTitleView.titleLabel.font = [UIFont fontWithName:@".SFUIDisplay" size:22.0];
+        CGPoint center = self.headerTitleView.titleLabel.center;
         center.y = self.headerEffectView.frameHeight/2;
-        self.titleLabel.center = center;
+        self.headerTitleView.titleLabel.center = center;
         CGPoint center2 = self.clearButton.center;
         center2.y = self.headerEffectView.frameHeight/2;
         self.clearButton.center = center2;

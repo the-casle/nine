@@ -80,9 +80,13 @@ extern "C" UIColor *LCPParseColorString(NSString *colorStringFromPrefs, NSString
 @interface NCNotificationListClearButton : UIView
 @end
 
+@interface NCNotificationListHeaderTitleView
+@property (nonatomic,retain) SBUILegibilityLabel * titleLabel;
+@end
+
 @interface NCNotificationListSectionHeaderView : UIView
 @property (nonatomic, retain) UIVisualEffectView *headerEffectView;
-@property (nonatomic, retain) SBUILegibilityLabel *titleLabel;
+@property (nonatomic,retain) NCNotificationListHeaderTitleView * headerTitleView;
 @property (nonatomic, retain) NCNotificationListClearButton *clearButton;
 @end
 
@@ -120,7 +124,7 @@ extern "C" UIColor *LCPParseColorString(NSString *colorStringFromPrefs, NSString
 @end
 
 @interface NCNotificationPriorityList
-@property (nonatomic,retain) NSMutableOrderedSet * requests;
+@property (nonatomic,retain) NSArray * allNotificationRequests;
 @end
 
 @interface NCNotificationCombinedListViewController : NCNotificationListViewController
@@ -212,6 +216,7 @@ extern "C" UIColor *LCPParseColorString(NSString *colorStringFromPrefs, NSString
 @property (nonatomic,retain) SBFWallpaperView * homescreenWallpaperView;
 @property (nonatomic,retain) SBFWallpaperView *lockscreenWallpaperView;
 -(id)_wallpaperViewForVariant:(long long)arg1 ;
+@property (nonatomic) CGFloat windowLevel;
 @property (nonatomic,retain) SBFWallpaperView * sharedWallpaperView;
 @property (nonatomic,readonly) SBFWallpaperConfigurationManager * wallpaperConfigurationManager;
 
