@@ -248,7 +248,7 @@ BOOL isOnLockscreen() {
     if(enableSeparators){
         for(NCNotificationListCell *cell in self.collectionView.visibleCells){
             if([cell isKindOfClass:%c(NCNotificationListCell)]){
-                NCNotificationShortLookView *shortView = ((NCNotificationShortLookView *)((_NCNotificationViewControllerView *)cell.contentViewController.view).contentView);
+                NCNotificationShortLookView *shortView = ((NCNotificationShortLookView *)((NCNotificationViewControllerView *)cell.contentViewController.view).contentView);
                 if([shortView isKindOfClass:%c(NCNotificationShortLookView)] && [shortView respondsToSelector:@selector(tcUpdateTopLine)]){
                     [shortView tcUpdateTopLine];
                 }
@@ -258,20 +258,173 @@ BOOL isOnLockscreen() {
 }
 %end
 
+%group ShortLookGeneral
+%hook NCNotificationShortLookView
+%property (nonatomic, retain, getter=isNineBanner) BOOL nineBanner;
+-(void) layoutSubviews{
+    %orig;
+    
+    if([[self _viewControllerForAncestor] respondsToSelector:@selector(delegate)]){
+        self.nineBanner = [[[self _viewControllerForAncestor] delegate] isKindOfClass:%c(SBNotificationBannerDestination)];
+    }
+    
+    [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
+    UIInterfaceOrientation interfaceOrientation = [[UIApplication sharedApplication] statusBarOrientation];
+    if (UIDeviceOrientationIsPortrait(interfaceOrientation) && enableBannerSection)
+    {
+        if([[[self _viewControllerForAncestor] view].superview isKindOfClass:%c(UITransitionView)]){
+            for(id object in self.allSubviews){
+                if([object isKindOfClass:%c(MTPlatterCustomContentView)] || [object isKindOfClass:%c(MTPlatterHeaderContentView)]){
+                    if([object frame].origin.y != 32 && enableBanners){
+                        CGRect contentFrame = [object frame];
+                        contentFrame.origin.y = 32;
+                        [object setFrame:contentFrame];
+                    }
+                }
+            }
+        }
+    }
+    [[UIDevice currentDevice] endGeneratingDeviceOrientationNotifications];
+    
+}
+-(BOOL)_shouldShowGrabber {
+    return enableBannerSection ? YES : %orig;
+}
+%end
+%end // End ShortLookGeneral.
+
+%group ShortLookNotification
 %hook NCNotificationShortLookView
 %property (nonatomic, retain) _UITableViewCellSeparatorView *singleLine;
 %property (nonatomic, retain) _UITableViewCellSeparatorView *topLine;
-%property (nonatomic, retain) UIVisualEffectView *notifEffectView;
-
 -(void) layoutSubviews{
-    %orig;
-    if(![[self _viewControllerForAncestor] respondsToSelector:@selector(delegate)]){
-        return;
-    }
-    
     NCNotificationGrabberView *grabberView = MSHookIvar<NCNotificationGrabberView *>(self, "_grabberView"); // Grabber used for later;
     
-    if([[[self _viewControllerForAncestor] delegate] isKindOfClass:%c(SBNotificationBannerDestination)]){
+    if(!self.isNineBanner){
+        // not a banner
+        if(enableNotifications){
+            if(self.backgroundView){
+                self.backgroundView.hidden = YES;
+            }
+            
+            MSHookIvar<UIImageView *>(self, "_shadowView").hidden = YES;
+            
+            //Sets all text to white color
+            [[self _headerContentView] setTintColor:[UIColor whiteColor]];
+            [[[[self _headerContentView] _dateLabel] _layer] setFilters:nil];
+            [[[[self _headerContentView] _titleLabel] _layer] setFilters:nil];
+            for(id object in self.allSubviews){
+                if([object isKindOfClass:%c(NCNotificationContentView)]){
+                    [[object _secondaryTextView] setTextColor:[UIColor whiteColor]];
+                    [[object _primaryLabel] setTextColor:[UIColor whiteColor]];
+                    [[object _primarySubtitleLabel] setTextColor:[UIColor whiteColor]];
+                }
+            }
+            
+            [[self backgroundMaterialView] setHidden:YES];
+            MSHookIvar<MTMaterialView *>(self, "_mainOverlayView").hidden = true;
+            
+            BOOL rotationCheckLandscape = NO;
+            [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
+            UIInterfaceOrientation interfaceOrientation = [[UIApplication sharedApplication] statusBarOrientation];
+            
+            if (UIDeviceOrientationIsLandscape(interfaceOrientation))
+            {
+                rotationCheckLandscape = YES;
+            }
+            [[UIDevice currentDevice] endGeneratingDeviceOrientationNotifications];
+            if(!enableExtend || rotationCheckLandscape == YES){
+                self.frameWidth = self.superview.frame.size.width - .5;
+            } else {
+                self.frameWidth = UIScreen.mainScreen.bounds.size.width - ((UIScreen.mainScreen.bounds.size.width - self.superview.frame.size.width) / 2);
+            }
+            
+            if(enableSeparators){
+                if(!self.topLine){
+                    
+                    self.topLine.drawsWithVibrantLightMode = NO;
+                    self.topLine = [[%c(_UITableViewCellSeparatorView) alloc] initWithFrame:self.frame];
+                    UIBlurEffect *effect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleDark];
+                    UIVibrancyEffect *vibEffect = [UIVibrancyEffect effectForBlurEffect:effect];
+                    [self.topLine setSeparatorEffect:vibEffect];
+                    self.topLine.alpha = .45;
+                    
+                    [self addSubview:self.topLine];
+                    
+                }
+                self.topLine.frameHeight = .5;
+                self.topLine.frameX = 12;
+                
+                if(!enableExtend || rotationCheckLandscape == YES){
+                    self.topLine.frameWidth = self.frame.size.width - 17;
+                } else {
+                    self.topLine.frameWidth = self.frame.size.width - 12;
+                }
+                self.topLine.frameY = -7;
+                
+                [self tcUpdateTopLine];
+                
+                if(!self.singleLine){
+                    
+                    self.singleLine.drawsWithVibrantLightMode = NO;
+                    self.singleLine = [[%c(_UITableViewCellSeparatorView) alloc] initWithFrame:self.frame];
+                    UIBlurEffect *effect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleDark];
+                    UIVibrancyEffect *vibEffect = [UIVibrancyEffect effectForBlurEffect:effect];
+                    [self.singleLine setSeparatorEffect:vibEffect];
+                    self.singleLine.alpha = .45;
+                    
+                    [self addSubview:self.singleLine];
+                    
+                }
+                self.singleLine.frameHeight = .5;
+                self.singleLine.frameX = 12;
+                
+                if(!enableExtend || rotationCheckLandscape == YES){
+                    self.singleLine.frameWidth = self.frame.size.width - 17;
+                } else {
+                    self.singleLine.frameWidth = self.frame.size.width - 12;
+                }
+                self.singleLine.frameY = 2 * self.center.y;
+            }
+        }
+        grabberView.hidden = YES;
+    }
+    %orig;
+}
+
+%new
+-(void) tcUpdateTopLine{
+    if([self._viewControllerForAncestor respondsToSelector:@selector(delegate)]){
+        if([((NCNotificationCombinedListViewController *)((NCNotificationShortLookViewController *)self._viewControllerForAncestor)._parentViewController).notificationPriorityList.allNotificationRequests firstObject] == ((NCNotificationShortLookViewController *)self._viewControllerForAncestor).notificationRequest){
+            self.topLine.alpha = 0;
+            self.topLine.hidden = NO;
+            [UIView animateWithDuration:.3
+                                  delay:0
+                                options:UIViewAnimationOptionCurveEaseInOut
+                             animations:^{self.topLine.alpha = .45;}
+                             completion:nil];
+        } else {
+            self.topLine.hidden = YES;
+        }
+    }
+}
+%end
+%end // End ShortLookNotification.
+
+%group ShortLookBanner
+%hook NCNotificationShortLookView
+%property (nonatomic, retain) UIVisualEffectView *notifEffectView;
+
+-(id)init{
+    if((self = %orig)){
+    }
+    return self;
+}
+
+-(void) layoutSubviews{
+    NCNotificationGrabberView *grabberView = MSHookIvar<NCNotificationGrabberView *>(self, "_grabberView"); // Grabber used for later;
+    
+    if(self.isNineBanner){
         // is a banner
         if(enableBannerSection){
             
@@ -393,137 +546,24 @@ BOOL isOnLockscreen() {
             }
         }
         
-    } else {
-        // not a banner
-        if(enableNotifications){
-            if(self.backgroundView){
-                self.backgroundView.hidden = YES;
-            }
-            
-            MSHookIvar<UIImageView *>(self, "_shadowView").hidden = YES;
-            
-            //Sets all text to white color
-            [[self _headerContentView] setTintColor:[UIColor whiteColor]];
-            [[[[self _headerContentView] _dateLabel] _layer] setFilters:nil];
-            [[[[self _headerContentView] _titleLabel] _layer] setFilters:nil];
-            for(id object in self.allSubviews){
-                if([object isKindOfClass:%c(NCNotificationContentView)]){
-                    [[object _secondaryTextView] setTextColor:[UIColor whiteColor]];
-                    [[object _primaryLabel] setTextColor:[UIColor whiteColor]];
-                    [[object _primarySubtitleLabel] setTextColor:[UIColor whiteColor]];
-                }
-            }
-            
-            [[self backgroundMaterialView] setHidden:YES];
-            MSHookIvar<MTMaterialView *>(self, "_mainOverlayView").hidden = true;
-            
-            BOOL rotationCheckLandscape = NO;
-            [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
-            UIInterfaceOrientation interfaceOrientation = [[UIApplication sharedApplication] statusBarOrientation];
-            
-            if (UIDeviceOrientationIsLandscape(interfaceOrientation))
-            {
-                rotationCheckLandscape = YES;
-            }
-            [[UIDevice currentDevice] endGeneratingDeviceOrientationNotifications];
-            if(!enableExtend || rotationCheckLandscape == YES){
-                self.frameWidth = self.superview.frame.size.width - .5;
-            } else {
-                self.frameWidth = UIScreen.mainScreen.bounds.size.width - ((UIScreen.mainScreen.bounds.size.width - self.superview.frame.size.width) / 2);
-            }
-            
-            if(enableSeparators){
-                if(!self.topLine){
-                    
-                    self.topLine.drawsWithVibrantLightMode = NO;
-                    self.topLine = [[%c(_UITableViewCellSeparatorView) alloc] initWithFrame:self.frame];
-                    UIBlurEffect *effect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleDark];
-                    UIVibrancyEffect *vibEffect = [UIVibrancyEffect effectForBlurEffect:effect];
-                    [self.topLine setSeparatorEffect:vibEffect];
-                    self.topLine.alpha = .45;
-                    
-                    [self addSubview:self.topLine];
-                    
-                }
-                self.topLine.frameHeight = .5;
-                self.topLine.frameX = 12;
-                
-                if(!enableExtend || rotationCheckLandscape == YES){
-                    self.topLine.frameWidth = self.frame.size.width - 17;
-                } else {
-                    self.topLine.frameWidth = self.frame.size.width - 12;
-                }
-                self.topLine.frameY = -7;
-                
-                [self tcUpdateTopLine];
-                
-                if(!self.singleLine){
-                    
-                    self.singleLine.drawsWithVibrantLightMode = NO;
-                    self.singleLine = [[%c(_UITableViewCellSeparatorView) alloc] initWithFrame:self.frame];
-                    UIBlurEffect *effect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleDark];
-                    UIVibrancyEffect *vibEffect = [UIVibrancyEffect effectForBlurEffect:effect];
-                    [self.singleLine setSeparatorEffect:vibEffect];
-                    self.singleLine.alpha = .45;
-                    
-                    [self addSubview:self.singleLine];
-                    
-                }
-                self.singleLine.frameHeight = .5;
-                self.singleLine.frameX = 12;
-                
-                if(!enableExtend || rotationCheckLandscape == YES){
-                    self.singleLine.frameWidth = self.frame.size.width - 17;
-                } else {
-                    self.singleLine.frameWidth = self.frame.size.width - 12;
-                }
-                self.singleLine.frameY = 2 * self.center.y;
-            }
-        }
-        grabberView.hidden = YES;
     }
     %orig;
-    [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
-    UIInterfaceOrientation interfaceOrientation = [[UIApplication sharedApplication] statusBarOrientation];
-    if (UIDeviceOrientationIsPortrait(interfaceOrientation) && enableBannerSection)
-    {
-        if([[[self _viewControllerForAncestor] view].superview isKindOfClass:%c(UITransitionView)]){
-            for(id object in self.allSubviews){
-                if([object isKindOfClass:%c(MTPlatterCustomContentView)] || [object isKindOfClass:%c(MTPlatterHeaderContentView)]){
-                    if([object frame].origin.y != 32 && enableBanners){
-                        CGRect contentFrame = [object frame];
-                        contentFrame.origin.y = 32;
-                        [object setFrame:contentFrame];
-                    }
-                }
-            }
-        }
-    }
-    [[UIDevice currentDevice] endGeneratingDeviceOrientationNotifications];
-    
-}
-
-%new
--(void) tcUpdateTopLine{
-    if([self._viewControllerForAncestor respondsToSelector:@selector(delegate)]){
-        if([((NCNotificationCombinedListViewController *)((NCNotificationShortLookViewController *)self._viewControllerForAncestor)._parentViewController).notificationPriorityList.allNotificationRequests firstObject] == ((NCNotificationShortLookViewController *)self._viewControllerForAncestor).notificationRequest){
-            self.topLine.alpha = 0;
-            self.topLine.hidden = NO;
-            [UIView animateWithDuration:.3
-                                  delay:0
-                                options:UIViewAnimationOptionCurveEaseInOut
-                             animations:^{self.topLine.alpha = .45;}
-                             completion:nil];
-        } else {
-            self.topLine.hidden = YES;
-        }
-    }
-}
-
--(BOOL)_shouldShowGrabber {
-    return enableBannerSection ? YES : %orig;
 }
 %end
+
+%hook PLPlatterHeaderContentView
+-(void) layoutSubviews{
+    if(enableExtend){
+        NCNotificationViewControllerView *contView = (NCNotificationViewControllerView *)((NCNotificationShortLookViewController *)self._viewControllerForAncestor).view;
+        if([contView isKindOfClass:%c(NCNotificationViewControllerView)]){
+            ((UIView *)self).frameWidth = contView.contentView.frame.size.width;
+        }
+    }
+    %orig;
+}
+%end
+%end // End ShortLookBanner.
+
 
 %hook NCNotificationListSectionHeaderView
 %property (nonatomic, retain) UIVisualEffectView *headerEffectView;
@@ -572,7 +612,7 @@ BOOL isOnLockscreen() {
 }
 %end
 
-%hook _NCNotificationViewControllerView
+%hook NCNotificationViewControllerView
 -(void) layoutSubviews{
     if(![[self.contentView _viewControllerForAncestor] respondsToSelector:@selector(delegate)] || !enableBannerSection){
         %orig;
@@ -731,6 +771,9 @@ static void loadPrefs() {
         if(enableClearBackground) {
             %init(ClearBackground);
         }
+        %init(ShortLookGeneral);
+        %init(ShortLookNotification);
+        %init(ShortLookBanner);
     }
     /*
     [[NSNotificationCenter defaultCenter] addObserverForName:NULL object:NULL queue:NULL usingBlock:^(NSNotification *note) {

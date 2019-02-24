@@ -66,6 +66,7 @@ extern "C" UIColor *LCPParseColorString(NSString *colorStringFromPrefs, NSString
 -(id) _customContentView;
 @property (nonatomic, retain) UIView *backgroundView;
 
+@property (nonatomic, getter=isNineBanner) BOOL nineBanner;
 @property (nonatomic, retain) _UITableViewCellSeparatorView *singleLine;
 @property (nonatomic, retain) _UITableViewCellSeparatorView *topLine;
 @property (nonatomic, retain) UIVisualEffectView *notifEffectView;
@@ -165,6 +166,10 @@ extern "C" UIColor *LCPParseColorString(NSString *colorStringFromPrefs, NSString
 
 
 @interface _NCNotificationViewControllerView : UIView
+@property (nonatomic, retain) UIView *contentView;
+@end
+
+@interface NCNotificationViewControllerView : UIView // ios 12
 @property (nonatomic, retain) UIView *contentView;
 @end
 
@@ -332,4 +337,7 @@ extern "C" UIColor *LCPParseColorString(NSString *colorStringFromPrefs, NSString
 - (void)setSaturationDeltaFactor:(double)arg1;
 - (void)setBlurRadius:(double)arg1;
 - (void)setBlurRadiusSetOnce:(bool)arg1;
+@end
+
+@interface PLPlatterHeaderContentView : UIView
 @end
