@@ -66,8 +66,15 @@ BOOL isOnLockscreen() {
 
 %hook SBCoverSheetSlidingViewController
 - (long long)dismissalSlidingMode {
-    if(isUILocked())[[objc_getClass("SBWallpaperController") sharedInstance] setVariant:0];
-    if(!isOnLockscreen())[[%c(SBWallpaperController) sharedInstance] setVariant:1];
+    SBWallpaperController *wallpaperCont = [%c(SBWallpaperController) sharedInstance];
+    if(isUILocked()){
+        [wallpaperCont setVariant:0];
+        [[wallpaperCont _window] setWindowLevel:1035]; // What it normally is
+    }
+    if(!isOnLockscreen()){
+        [wallpaperCont setVariant:1];
+        [[wallpaperCont _window] setWindowLevel:-5]; // Below icons
+    }
     
     if(isOnLockscreen()){
         ((UIView*)[%c(SBCoverSheetPanelBackgroundContainerView) sharedInstance]).alpha = 1;
@@ -310,16 +317,21 @@ BOOL isOnLockscreen() {
             MSHookIvar<UIImageView *>(self, "_shadowView").hidden = YES;
             
             //Sets all text to white color
-            [[self _headerContentView] setTintColor:[UIColor whiteColor]];
+            UIColor *white = [UIColor whiteColor];
+            
+            [[self _headerContentView] setTintColor:white];
             [[[[self _headerContentView] _dateLabel] _layer] setFilters:nil];
             [[[[self _headerContentView] _titleLabel] _layer] setFilters:nil];
-            for(id object in self.allSubviews){
-                if([object isKindOfClass:%c(NCNotificationContentView)]){
-                    [[object _secondaryTextView] setTextColor:[UIColor whiteColor]];
-                    [[object _primaryLabel] setTextColor:[UIColor whiteColor]];
-                    [[object _primarySubtitleLabel] setTextColor:[UIColor whiteColor]];
-                }
+            if ([self.notificationContentView respondsToSelector:@selector(_summaryLabel)]){
+                BSUIEmojiLabelView *fancyLabel = [self.notificationContentView _summaryLabel];
+                [[[fancyLabel contentLabel] _layer] setFilters:nil];
             }
+            
+            [[self.notificationContentView _secondaryTextView] setTextColor:white];
+            [[self.notificationContentView _primaryLabel] setTextColor:white];
+            [[self.notificationContentView _primarySubtitleLabel] setTextColor:white];
+            if ([self.notificationContentView respondsToSelector:@selector(_secondaryLabel)]) [[self.notificationContentView _secondaryLabel] setTextColor:white];
+            if ([self.notificationContentView respondsToSelector:@selector(_summaryLabel)]) [[self.notificationContentView _summaryLabel] setTextColor:white];
             
             [[self backgroundMaterialView] setHidden:YES];
             MSHookIvar<MTMaterialView *>(self, "_mainOverlayView").hidden = true;
@@ -409,6 +421,15 @@ BOOL isOnLockscreen() {
     }
 }
 %end
+
+%hook PLPlatterView
+-(void) layoutSubviews{
+    %orig;
+    self.backgroundView.hidden = YES;
+    self.overlayAlpha = 0;
+    self.hasStackingShadow = NO;
+}
+%end
 %end // End ShortLookNotification.
 
 %group ShortLookBanner
@@ -435,16 +456,17 @@ BOOL isOnLockscreen() {
                 }
             } else {
                 //Sets all text to white color
-                [[self _headerContentView] setTintColor:[UIColor whiteColor]];
+                UIColor *white = [UIColor whiteColor];
+                
+                [[self _headerContentView] setTintColor:white];
                 [[[[self _headerContentView] _dateLabel] _layer] setFilters:nil];
                 [[[[self _headerContentView] _titleLabel] _layer] setFilters:nil];
-                for(id object in self.allSubviews){
-                    if([object isKindOfClass:%c(NCNotificationContentView)]){
-                        [[object _secondaryTextView] setTextColor:[UIColor whiteColor]];
-                        [[object _primaryLabel] setTextColor:[UIColor whiteColor]];
-                        [[object _primarySubtitleLabel] setTextColor:[UIColor whiteColor]];
-                    }
-                }
+                
+                
+                [[self.notificationContentView _secondaryTextView] setTextColor:white];
+                [[self.notificationContentView _primaryLabel] setTextColor:white];
+                [[self.notificationContentView _primarySubtitleLabel] setTextColor:white];
+                if ([self.notificationContentView respondsToSelector:@selector(_secondaryLabel)]) [[self.notificationContentView _secondaryLabel] setTextColor:white];
                 
                 [[self backgroundMaterialView] setHidden:YES];
             }

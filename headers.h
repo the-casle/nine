@@ -36,10 +36,22 @@ extern "C" UIColor *LCPParseColorString(NSString *colorStringFromPrefs, NSString
 -(int)nowPlayingProcessPID;
 @end
 
-@interface NCNotificationContentView
+@interface BSUIEmojiLabelView : UILabel
+@property (nonatomic, retain) UILabel *contentLabel;
+@end
+
+@interface PLPlatterView : UIView
+@property (nonatomic, retain) UIView *backgroundView;
+@property (nonatomic) CGFloat overlayAlpha;
+@property (nonatomic) BOOL hasStackingShadow;
+@end
+
+@interface NCNotificationContentView : NSObject
 -(id) _secondaryTextView;
 -(id) _primaryLabel;
 -(id) _primarySubtitleLabel;
+-(id)_summaryLabel;
+-(id)_secondaryLabel;
 @end
 
 @interface MTPlatterHeaderContentView
@@ -65,6 +77,7 @@ extern "C" UIColor *LCPParseColorString(NSString *colorStringFromPrefs, NSString
 -(id) _headerContentView;
 -(id) _customContentView;
 @property (nonatomic, retain) UIView *backgroundView;
+@property (getter=_notificationContentView,nonatomic,readonly) NCNotificationContentView * notificationContentView;
 
 @property (nonatomic, getter=isNineBanner) BOOL nineBanner;
 @property (nonatomic, retain) _UITableViewCellSeparatorView *singleLine;
@@ -221,6 +234,7 @@ extern "C" UIColor *LCPParseColorString(NSString *colorStringFromPrefs, NSString
 @property (nonatomic,retain) SBFWallpaperView * homescreenWallpaperView;
 @property (nonatomic,retain) SBFWallpaperView *lockscreenWallpaperView;
 -(id)_wallpaperViewForVariant:(long long)arg1 ;
+-()_window;
 @property (nonatomic) CGFloat windowLevel;
 @property (nonatomic,retain) SBFWallpaperView * sharedWallpaperView;
 @property (nonatomic,readonly) SBFWallpaperConfigurationManager * wallpaperConfigurationManager;
