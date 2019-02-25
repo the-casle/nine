@@ -221,9 +221,23 @@ BOOL isOnLockscreen() {
 -(BOOL)hasContent{
     BOOL content = %orig;
     // Sending values to the background controller
+    NSLog(@"nine_TWEAK | in content: %d", isOnLockscreen());
     [[TCBackgroundViewController sharedInstance] updateSceenShot: content isRevealed: ((!isOnLockscreen()) ? YES : self.isShowingNotificationsHistory)]; // NC is never set to lock
     return content;
-
+}
+-(void) _updatePrioritySectionLowestPosition{
+    %orig;
+    [self hasContent]; // Updating the background.
+    if(enableSeparators){
+        for(NCNotificationListCell *cell in self.collectionView.visibleCells){
+            if([cell isKindOfClass:%c(NCNotificationListCell)]){
+                NCNotificationShortLookView *shortView = ((NCNotificationShortLookView *)((NCNotificationViewControllerView *)cell.contentViewController.view).contentView);
+                if([shortView isKindOfClass:%c(NCNotificationShortLookView)] && [shortView respondsToSelector:@selector(tcUpdateTopLine)]){
+                    [shortView tcUpdateTopLine];
+                }
+            }
+        }
+    }
 }
 %end
 
@@ -245,23 +259,6 @@ BOOL isOnLockscreen() {
     MSHookIvar<UIView *>(((SBDashBoardView *)self.view).backgroundView, "_sourceOverView").hidden = YES;
     MSHookIvar<UIView *>(((SBDashBoardView *)self.view).backgroundView, "_lightenSourceOverView").hidden = YES;
     MSHookIvar<UIView *>(((SBDashBoardView *)self.view).backgroundView, "_darkenSourceOverView").hidden = YES;
-}
-%end
-
- // Used to update separators;
-%hook NCNotificationCombinedListViewController
--(void) _updatePrioritySectionLowestPosition{
-    %orig;
-    if(enableSeparators){
-        for(NCNotificationListCell *cell in self.collectionView.visibleCells){
-            if([cell isKindOfClass:%c(NCNotificationListCell)]){
-                NCNotificationShortLookView *shortView = ((NCNotificationShortLookView *)((NCNotificationViewControllerView *)cell.contentViewController.view).contentView);
-                if([shortView isKindOfClass:%c(NCNotificationShortLookView)] && [shortView respondsToSelector:@selector(tcUpdateTopLine)]){
-                    [shortView tcUpdateTopLine];
-                }
-            }
-        }
-    }
 }
 %end
 
