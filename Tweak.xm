@@ -588,31 +588,28 @@ BOOL isOnLockscreen() {
 
 %hook NCNotificationListSectionHeaderView
 %property (nonatomic, retain) UIVisualEffectView *headerEffectView;
--(void) layoutSubviews{
-    if(!self.headerEffectView && enableHeaders){
-        UIBlurEffect *blurEffect = [UIBlurEffect effectWithBlurRadius:3];
-        self.headerEffectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
-        self.headerEffectView.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:.2];
-        self.headerEffectView.frame = self.bounds;
-        
-        //[self addSubview:self.headerEffectView];
-        [self insertSubview:self.headerEffectView belowSubview:self.headerTitleView.titleLabel];
+-(id)initWithFrame:(CGRect) frame{
+    if((self = %orig)){
+        if(enableHeaders){
+            UIBlurEffect *blurEffect = [UIBlurEffect effectWithBlurRadius:3];
+            self.headerEffectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
+            self.headerEffectView.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:.2];
+            
+            [self addSubview:self.headerEffectView];
+            [self sendSubviewToBack: self.headerEffectView];
+        }
     }
+    return self;
+}
+-(void) _layoutHeaderTitleView{
     %orig;
-    
     if(enableHeaders){
         self.headerEffectView.frame = self.bounds;
         self.headerEffectView.frameHeight = self.bounds.size.height - 15;
         self.headerEffectView.frameY = 15;
-        
-        // changing size
-        /*self.headerTitleView.titleLabel.font = [UIFont fontWithName:@".SFUIDisplay" size:22.0];
-        CGPoint center = self.headerTitleView.titleLabel.center;
-        center.y = self.headerEffectView.frameHeight/2;
-        self.headerTitleView.titleLabel.center = center;
-        CGPoint center2 = self.clearButton.center;
-        center2.y = self.headerEffectView.frameHeight/2;
-        self.clearButton.center = center2;*/
+        [self insertSubview:self.headerEffectView belowSubview:self.headerTitleView];
+
+        self.clearButton.frameY = self.headerEffectView.frameY + 3.5;
     }
 }
 %end
@@ -620,7 +617,7 @@ BOOL isOnLockscreen() {
 %hook NCNotificationListHeaderTitleView
 -(void) layoutSubviews{
     %orig;
-    self.titleLabel.font = [UIFont fontWithName:@".SFUIDisplay" size:20.0];
+     if(enableHeaders) self.titleLabel.font = [UIFont fontWithName:@".SFUIDisplay" size:20.0];
 }
 %end
 
