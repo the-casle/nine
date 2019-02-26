@@ -8,7 +8,6 @@ static BOOL enableHeaders;
 static BOOL enableExtend;
 static BOOL enableGrabber;
 static BOOL enableIconRemove;
-static BOOL enableColorCube;
 static BOOL enableBannerSection;
 static BOOL enableClearBackground;
 static BOOL enableSeparators;
@@ -271,25 +270,6 @@ BOOL isOnLockscreen() {
     if([[self _viewControllerForAncestor] respondsToSelector:@selector(delegate)]){
         self.nineBanner = [[[self _viewControllerForAncestor] delegate] isKindOfClass:%c(SBNotificationBannerDestination)];
     }
-    
-    [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
-    UIInterfaceOrientation interfaceOrientation = [[UIApplication sharedApplication] statusBarOrientation];
-    if (UIDeviceOrientationIsPortrait(interfaceOrientation) && enableBannerSection)
-    {
-        if([[[self _viewControllerForAncestor] view].superview isKindOfClass:%c(UITransitionView)]){
-            for(id object in self.allSubviews){
-                if([object isKindOfClass:%c(MTPlatterCustomContentView)] || [object isKindOfClass:%c(MTPlatterHeaderContentView)]){
-                    if([object frame].origin.y != 32 && enableBanners){
-                        CGRect contentFrame = [object frame];
-                        contentFrame.origin.y = 32;
-                        [object setFrame:contentFrame];
-                    }
-                }
-            }
-        }
-    }
-    [[UIDevice currentDevice] endGeneratingDeviceOrientationNotifications];
-    
 }
 -(BOOL)_shouldShowGrabber {
     return enableBannerSection ? YES : %orig;
@@ -434,6 +414,7 @@ BOOL isOnLockscreen() {
 %group ShortLookBanner
 %hook NCNotificationShortLookView
 %property (nonatomic, retain) UIVisualEffectView *notifEffectView;
+%property (nonatomic, retain) UIView *extendedView;
 
 -(id)init{
     if((self = %orig)){
@@ -472,70 +453,26 @@ BOOL isOnLockscreen() {
             
             MSHookIvar<MTMaterialView *>(self, "_mainOverlayView").hidden = true;
             
-            self.frameWidth = UIScreen.mainScreen.bounds.size.width;
-            [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
-            UIInterfaceOrientation interfaceOrientation = [[UIApplication sharedApplication] statusBarOrientation];
-            
-            //
-            if (UIDeviceOrientationIsPortrait(interfaceOrientation)) {
-                if(enableBanners && self.frameY != -.5){
-                    self.frameHeight += 32;
-                }
-            }
-            [[UIDevice currentDevice] endGeneratingDeviceOrientationNotifications];
-            self.frameY = -.5;
-            
             CGPoint notifCenter = self.center;
             notifCenter.x = self.superview.center.x;
             self.center = notifCenter;
-            
             
             if(!self.notifEffectView){
                 UIBlurEffect *blurEffect = [UIBlurEffect effectWithBlurRadius:17];
                 self.notifEffectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
                 
-                // tint color
-                if(enableColorCube){
-                    CCColorCube *colorCube = [[CCColorCube alloc] init];
-                    UIImage *img = (UIImage *)[[self _headerContentView] icon];
-                    UIColor *rgbWhite = [UIColor colorWithRed:1 green:1 blue:1 alpha:1];
-                    NSArray *imgColors = [colorCube extractBrightColorsFromImage:img avoidColor:rgbWhite count:4];
-                    UIColor *uicolor = [imgColors[0] retain];
-                    CGColorRef color = [uicolor CGColor];
-                    UIColor *darkenedImgColor = nil;
-                    
-                    int numComponents = CGColorGetNumberOfComponents(color);
-                    
-                    if (numComponents == 4)
-                    {
-                        const CGFloat *components = CGColorGetComponents(color);
-                        CGFloat red = components[0];
-                        CGFloat green = components[1];
-                        CGFloat blue = components[2];
-                        //CGFloat alpha = components[3];
-                        darkenedImgColor = [UIColor colorWithRed: red - .2 green: green - .2 blue: blue - .2 alpha:1];
-                    }
-                    
-                    [uicolor release];
-                    
-                    
-                    self.notifEffectView.backgroundColor = [darkenedImgColor colorWithAlphaComponent:.65];
-                } else {
-                    // Palette banners
-                    if(paletteEnabled && self.backgroundView){
-                        self.notifEffectView.backgroundColor = [UIColor clearColor];
-                        self.backgroundView.frame = self.bounds;
-                        [self.backgroundView _setCornerRadius: 0];
-                        for(id object in self.backgroundView.subviews){
-                            ((UIView *)object).frame = self.bounds;
-                            for(id layer in ((UIView *)object).layer.sublayers){
-                                ((CALayer *)layer).frame = self.bounds;
-                            }
+                // Palette banners
+                if(paletteEnabled && self.backgroundView){
+                    self.notifEffectView.backgroundColor = [UIColor clearColor];
+                    self.backgroundView.frame = self.bounds;
+                    [self.backgroundView _setCornerRadius: 0];
+                    for(id object in self.backgroundView.subviews){
+                        ((UIView *)object).frame = self.bounds;
+                        for(id layer in ((UIView *)object).layer.sublayers){
+                            ((CALayer *)layer).frame = self.bounds;
                         }
                     }
-                    else self.notifEffectView.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:.55];
-                }
-                
+                } else self.notifEffectView.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:.55];
                 
                 self.notifEffectView.frame = self.bounds;
                 self.notifEffectView.frameX = 0;
@@ -546,8 +483,28 @@ BOOL isOnLockscreen() {
                     [self addSubview:self.notifEffectView];
                     [self sendSubviewToBack:self.notifEffectView];
                 }
-                
             }
+            
+            self.frameWidth = UIScreen.mainScreen.bounds.size.width;
+            
+            if(!self.extendedView){
+                self.extendedView = [[UIView alloc] initWithFrame:self.bounds];
+                self.extendedView.frameHeight += 32;
+                [self.superview addSubview: self.extendedView];
+            }
+            
+            [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
+            UIInterfaceOrientation interfaceOrientation = [[UIApplication sharedApplication] statusBarOrientation];
+            
+            if (UIDeviceOrientationIsPortrait(interfaceOrientation)) {
+                if(enableBanners && self.frameY != 32){
+                    self.notifEffectView.frame = self.extendedView.frame;
+                    [self.extendedView addSubview:self.notifEffectView];
+                    self.frameY = 32;
+                    [self.extendedView addSubview:self];
+                }
+            }
+            [[UIDevice currentDevice] endGeneratingDeviceOrientationNotifications];
             
             // enable built in grabber and coloring
             if(enableGrabber == YES){
@@ -556,15 +513,6 @@ BOOL isOnLockscreen() {
             grabberView.hidden = enableGrabber ? NO : YES;
             
             self.singleLine.hidden = YES;
-            
-            if(enableIconRemove == YES){
-                MTPlatterHeaderContentView *header = [self _headerContentView];
-                header.iconButton.hidden = YES;
-                CGRect headerFrame = ((UILabel *)[header _titleLabel]).frame;
-                headerFrame.origin.x = -13;
-                ((UILabel *)[header _titleLabel]).frame = headerFrame;
-                
-            }
         }
         
     }
@@ -579,6 +527,14 @@ BOOL isOnLockscreen() {
         if([contView isKindOfClass:%c(NCNotificationViewControllerView)]){
             ((UIView *)self).frameWidth = contView.contentView.frame.size.width;
         }
+    }
+    if(enableIconRemove == YES){
+        ((UIButton *)self.iconButtons[0]).hidden = YES;
+        
+        CGRect headerFrame = ((UILabel *)[self _titleLabel]).frame;
+        headerFrame.origin.x = -13;
+        ((UILabel *)[self _titleLabel]).bounds = headerFrame;
+        
     }
     %orig;
 }
@@ -653,34 +609,6 @@ BOOL isOnLockscreen() {
     %orig;
 }
 %end
-/*
-%hook SBCoverSheetUnlockedEnvironmentHoster
--(void)setUnlockedEnvironmentWindowsHidden:(BOOL)arg1{
-    %orig;
-    self.hostingWindow.hidden = NO;
- 
-    UIImage *tempBackgroundImage = [UIImage imageWithCGImage:(CGImage *)[self.hostingWindow createSnapshotWithRect:self.hostingWindow.frame]];
-    NSLog(@"nine_TWEAK %@", tempBackgroundImage);
-    CCColorCube *colorCube = [[CCColorCube alloc] init];
-    UIImage *img = tempBackgroundImage;
-    NSArray *imgColors = [colorCube extractColorsFromImage:img flags:CCOrderByBrightness count:4];
-    NSLog(@"nine_TWEAK %@", imgColors[0]);
-    self.hostingWindow.debugHighlight = imgColors[0];
- 
-    @try {
-        
-    } @catch (NSException *exception) {
-        // log the exception as you wish
-        // you can then throw the exception up
-        NSLog(@"nine_TWEAK exception: %@", exception);
-        @throw exception;
-    }
- 
-
-}
-%end
-*/
-
 
 /*
 
@@ -779,7 +707,6 @@ static void loadPrefs() {
     enableExtend = [settings boolForKey:@"extendEnabled"];
     enableGrabber = [settings boolForKey:@"grabberEnabled"];
     enableIconRemove = [settings boolForKey:@"iconRemoveEnabled"];
-    enableColorCube = [settings boolForKey:@"colorEnabled"];
     enableBannerSection = [settings boolForKey:@"bannerSectionEnabled"];
     enableClearBackground = [settings boolForKey:@"clearBackgroundEnabled"];
     enableSeparators = [settings boolForKey:@"separatorsEnabled"];

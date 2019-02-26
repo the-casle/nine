@@ -83,6 +83,7 @@ extern "C" UIColor *LCPParseColorString(NSString *colorStringFromPrefs, NSString
 @property (nonatomic, retain) _UITableViewCellSeparatorView *singleLine;
 @property (nonatomic, retain) _UITableViewCellSeparatorView *topLine;
 @property (nonatomic, retain) UIVisualEffectView *notifEffectView;
+@property (nonatomic, retain) UIView *extendedView;
 
 -(void) tcUpdateTopLine;
 @end
@@ -354,4 +355,6 @@ extern "C" UIColor *LCPParseColorString(NSString *colorStringFromPrefs, NSString
 @end
 
 @interface PLPlatterHeaderContentView : UIView
+@property (nonatomic, retain) NSArray *iconButtons;
+-(id)_titleLabel;
 @end
