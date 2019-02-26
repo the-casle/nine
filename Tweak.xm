@@ -68,11 +68,11 @@ BOOL isOnLockscreen() {
     SBWallpaperController *wallpaperCont = [%c(SBWallpaperController) sharedInstance];
     if(isUILocked()){
         [wallpaperCont setVariant:0];
-        [[wallpaperCont _window] setWindowLevel:1035]; // What it normally is
+        if(SYSTEM_VERSION_BETWEEN_OR_EQUAL_TO(@"12.0",@"12.2.3"))[[wallpaperCont _window] setWindowLevel:1035]; // What it normally is
     }
     if(!isOnLockscreen()){
         [wallpaperCont setVariant:1];
-        [[wallpaperCont _window] setWindowLevel:-5]; // Below icons
+        if(SYSTEM_VERSION_BETWEEN_OR_EQUAL_TO(@"12.0",@"12.2.3"))[[wallpaperCont _window] setWindowLevel:-5]; // Below icons
     }
     
     if(isOnLockscreen()){
@@ -93,7 +93,7 @@ BOOL isOnLockscreen() {
 
 %hook _SBWallpaperWindow
 -(void) setWindowLevel:(CGFloat) level{
-    if(!isOnLockscreen()){
+    if(!isOnLockscreen() && SYSTEM_VERSION_BETWEEN_OR_EQUAL_TO(@"12.0",@"12.2.3")){
         %orig(-5);
     } else %orig;
 }
@@ -220,7 +220,6 @@ BOOL isOnLockscreen() {
 -(BOOL)hasContent{
     BOOL content = %orig;
     // Sending values to the background controller
-    NSLog(@"nine_TWEAK | in content: %d", isOnLockscreen());
     [[TCBackgroundViewController sharedInstance] updateSceenShot: content isRevealed: ((!isOnLockscreen()) ? YES : self.isShowingNotificationsHistory)]; // NC is never set to lock
     return content;
 }
@@ -270,6 +269,9 @@ BOOL isOnLockscreen() {
     if([[self _viewControllerForAncestor] respondsToSelector:@selector(delegate)]){
         self.nineBanner = [[[self _viewControllerForAncestor] delegate] isKindOfClass:%c(SBNotificationBannerDestination)];
     }
+    
+    NCNotificationGrabberView *grabberView = MSHookIvar<NCNotificationGrabberView *>(self, "_grabberView"); // Grabber used for later;
+    if(!self.isNineBanner && !enableNotifications) grabberView.hidden = YES;
 }
 -(BOOL)_shouldShowGrabber {
     return enableBannerSection ? YES : %orig;
@@ -283,6 +285,7 @@ BOOL isOnLockscreen() {
 %property (nonatomic, retain) _UITableViewCellSeparatorView *topLine;
 -(void) layoutSubviews{
     NCNotificationGrabberView *grabberView = MSHookIvar<NCNotificationGrabberView *>(self, "_grabberView"); // Grabber used for later;
+    NSLog(@"nine_TWEAK | %d", self.isNineBanner);
     
     if(!self.isNineBanner){
         // not a banner
@@ -304,6 +307,8 @@ BOOL isOnLockscreen() {
                 [[[fancyLabel contentLabel] _layer] setFilters:nil];
             }
             
+            [[[self _headerContentView] _dateLabel] setTextColor:white];
+            [[[self _headerContentView] _titleLabel] setTextColor:white];
             [[self.notificationContentView _secondaryTextView] setTextColor:white];
             [[self.notificationContentView _primaryLabel] setTextColor:white];
             [[self.notificationContentView _primarySubtitleLabel] setTextColor:white];
@@ -377,35 +382,83 @@ BOOL isOnLockscreen() {
             }
         }
         grabberView.hidden = YES;
+    } else if(!enableBannerSection){
+        NSLog(@"nine_TWEAK | %d pt 2", self.isNineBanner);
+        if(self.backgroundView){
+            self.backgroundView.hidden = NO;
+        }
+        [[self backgroundMaterialView] setHidden:NO];
+        MSHookIvar<MTMaterialView *>(self, "_mainOverlayView").hidden = NO;
+        MSHookIvar<UIImageView *>(self, "_shadowView").hidden = NO;
+        self.singleLine.hidden = YES;
+        
+        UIColor *black = [UIColor blackColor];
+        
+        [[self _headerContentView] setTintColor:black];
+        [[[[self _headerContentView] _dateLabel] _layer] setFilters:nil];
+        [[[[self _headerContentView] _titleLabel] _layer] setFilters:nil];
+        if ([self.notificationContentView respondsToSelector:@selector(_summaryLabel)]){
+            BSUIEmojiLabelView *fancyLabel = [self.notificationContentView _summaryLabel];
+            [[[fancyLabel contentLabel] _layer] setFilters:nil];
+        }
+        [[[self _headerContentView] _dateLabel] setTextColor:black];
+        [[[self _headerContentView] _titleLabel] setTextColor:black];
+        [[self.notificationContentView _secondaryTextView] setTextColor:black];
+        [[self.notificationContentView _primaryLabel] setTextColor:black];
+        [[self.notificationContentView _primarySubtitleLabel] setTextColor:black];
+        if ([self.notificationContentView respondsToSelector:@selector(_secondaryLabel)]) [[self.notificationContentView _secondaryLabel] setTextColor:black];
+        if ([self.notificationContentView respondsToSelector:@selector(_summaryLabel)]) [[self.notificationContentView _summaryLabel] setTextColor:black];
     }
     %orig;
 }
 
 %new
 -(void) tcUpdateTopLine{
-    if([self._viewControllerForAncestor respondsToSelector:@selector(delegate)]){
-        if([((NCNotificationCombinedListViewController *)((NCNotificationShortLookViewController *)self._viewControllerForAncestor)._parentViewController).notificationPriorityList.allNotificationRequests firstObject] == ((NCNotificationShortLookViewController *)self._viewControllerForAncestor).notificationRequest){
-            self.topLine.alpha = 0;
-            self.topLine.hidden = NO;
-            [UIView animateWithDuration:.3
-                                  delay:0
-                                options:UIViewAnimationOptionCurveEaseInOut
-                             animations:^{self.topLine.alpha = .45;}
-                             completion:nil];
-        } else {
-            self.topLine.hidden = YES;
+    if(SYSTEM_VERSION_BETWEEN_OR_EQUAL_TO(@"12.0",@"12.2.3")){
+        if([self._viewControllerForAncestor respondsToSelector:@selector(delegate)]){
+            if([((NCNotificationCombinedListViewController *)((NCNotificationShortLookViewController *)self._viewControllerForAncestor)._parentViewController).notificationPriorityList.allNotificationRequests firstObject] == ((NCNotificationShortLookViewController *)self._viewControllerForAncestor).notificationRequest){
+                self.topLine.alpha = 0;
+                self.topLine.hidden = NO;
+                [UIView animateWithDuration:.3
+                                      delay:0
+                                    options:UIViewAnimationOptionCurveEaseInOut
+                                 animations:^{self.topLine.alpha = .45;}
+                                 completion:nil];
+            } else {
+                self.topLine.hidden = YES;
+            }
+        }
+    } else if(SYSTEM_VERSION_BETWEEN_OR_EQUAL_TO(@"11.0",@"11.9")){
+        if([self._viewControllerForAncestor respondsToSelector:@selector(delegate)]){
+            if([((NCNotificationCombinedListViewController *)((NCNotificationShortLookViewController *)self._viewControllerForAncestor)._parentViewController).notificationPriorityList.requests firstObject] == ((NCNotificationShortLookViewController *)self._viewControllerForAncestor).notificationRequest){
+                self.topLine.alpha = 0;
+                self.topLine.hidden = NO;
+                [UIView animateWithDuration:.3
+                                      delay:0
+                                    options:UIViewAnimationOptionCurveEaseInOut
+                                 animations:^{self.topLine.alpha = .45;}
+                                 completion:nil];
+            } else {
+                self.topLine.hidden = YES;
+            }
         }
     }
+    
 }
 %end
 
 %hook PLPlatterView
 -(void) layoutSubviews{
     %orig;
-    if([self._viewControllerForAncestor isKindOfClass:%c(NCNotificationShortLookViewController)]){
-        self.backgroundView.hidden = YES;
-        self.overlayAlpha = 0;
-        self.hasStackingShadow = NO;
+    if(SYSTEM_VERSION_BETWEEN_OR_EQUAL_TO(@"12.0",@"12.2.3")){
+        NCNotificationViewControllerView *contView = (NCNotificationViewControllerView *)((NCNotificationShortLookViewController *)self._viewControllerForAncestor).view;
+        if([contView isKindOfClass:%c(NCNotificationViewControllerView)]){
+            if(!((NCNotificationShortLookView *)contView.contentView).isNineBanner || enableBannerSection){
+                self.backgroundView.hidden = YES;
+                self.overlayAlpha = 0;
+                self.hasStackingShadow = NO;
+            }
+        }
     }
 }
 %end
@@ -498,6 +551,12 @@ BOOL isOnLockscreen() {
                     [self.extendedView addSubview:self];
                 }
             }
+            
+            if(!enableBanners){
+                self.frameY = -.5;
+            }
+            self.frameX = 0;
+            
             [[UIDevice currentDevice] endGeneratingDeviceOrientationNotifications];
             
             // enable built in grabber and coloring
@@ -506,19 +565,36 @@ BOOL isOnLockscreen() {
             }
             grabberView.hidden = enableGrabber ? NO : YES;
             
-            self.singleLine.hidden = YES;
+            if(enableIconRemove == YES && SYSTEM_VERSION_BETWEEN_OR_EQUAL_TO(@"11.0",@"11.9")){
+                MTPlatterHeaderContentView *header = [self _headerContentView];
+                header.iconButton.hidden = YES;
+                CGRect headerFrame = ((UILabel *)[header _titleLabel]).frame;
+                headerFrame.origin.x = -13;
+                ((UILabel *)[header _titleLabel]).frame = headerFrame;
+                
+            }
+            
+            if([self respondsToSelector:@selector(singleLine)]) self.singleLine.hidden = YES;
         }
     }
     %orig;
 }
 %end
 
-%hook PLPlatterHeaderContentView
+%hook PLPlatterHeaderContentView // ios 12
 -(void) layoutSubviews{
     if(enableExtend){
         NCNotificationViewControllerView *contView = (NCNotificationViewControllerView *)((NCNotificationShortLookViewController *)self._viewControllerForAncestor).view;
         if([contView isKindOfClass:%c(NCNotificationViewControllerView)]){
             ((UIView *)self).frameWidth = contView.contentView.frame.size.width;
+        }
+    }
+    if(enableBannerSection){
+        NCNotificationViewControllerView *contView = (NCNotificationViewControllerView *)((NCNotificationShortLookViewController *)self._viewControllerForAncestor).view;
+        if([contView isKindOfClass:%c(NCNotificationViewControllerView)]){
+            if(((NCNotificationShortLookView *)contView.contentView).isNineBanner){
+                ((UIView *)self).frameWidth = contView.contentView.frame.size.width;
+            }
         }
     }
     if(enableIconRemove == YES){
@@ -551,8 +627,25 @@ BOOL isOnLockscreen() {
 }
 -(void) _layoutHeaderTitleView{
     %orig;
-    if(enableHeaders){
+    if(enableHeaders && SYSTEM_VERSION_BETWEEN_OR_EQUAL_TO(@"12.0",@"12.3")){
         self.headerEffectView.frame = self.bounds;
+        [self insertSubview:self.headerEffectView belowSubview:self.headerTitleView];
+    }
+}
+-(void) layoutSubviews{
+    %orig;
+    if(enableHeaders && SYSTEM_VERSION_BETWEEN_OR_EQUAL_TO(@"11.0",@"11.9")){
+        self.headerEffectView.frame = self.bounds;
+        self.headerEffectView.frameHeight = self.bounds.size.height - 10;
+        
+        // changing size
+        self.titleLabel.font = [UIFont fontWithName:@".SFUIDisplay" size:22.0];
+        CGPoint center = self.titleLabel.center;
+        center.y = self.headerEffectView.frameHeight/2;
+        self.titleLabel.center = center;
+        CGPoint center2 = self.clearButton.center;
+        center2.y = self.headerEffectView.frameHeight/2;
+        self.clearButton.center = center2;
         [self insertSubview:self.headerEffectView belowSubview:self.headerTitleView];
     }
 }
@@ -575,39 +668,39 @@ BOOL isOnLockscreen() {
 }
 %end
 
-%hook NCNotificationViewControllerView
+%hook NCNotificationViewControllerView // ios 12
 -(void) layoutSubviews{
-    if(![[self.contentView _viewControllerForAncestor] respondsToSelector:@selector(delegate)] || !enableBannerSection){
-        %orig;
-        return;
-    }
-    if([[[self.contentView _viewControllerForAncestor] delegate] isKindOfClass:%c(SBNotificationBannerDestination)]){
-    //if(self.frame.origin.y != 0){
-        CGRect frame = self.frame;
-        frame.origin.y = 0;
-        self.frame = frame;
+    if(SYSTEM_VERSION_BETWEEN_OR_EQUAL_TO(@"12.0",@"12.3")){
+        if(![[self.contentView _viewControllerForAncestor] respondsToSelector:@selector(delegate)] || !enableBannerSection){
+            %orig;
+            return;
+        }
+        if([[[self.contentView _viewControllerForAncestor] delegate] isKindOfClass:%c(SBNotificationBannerDestination)]){
+            CGRect frame = self.frame;
+            frame.origin.y = 0;
+            self.frame = frame;
+        }
     }
     %orig;
 }
 %end
 
-/*
-
-// Media controller
-%hook MediaControlsHeaderView
--(id) secondaryLabel {
-    UILabel *secondaryLabel;
-    NSLog(@"nine_TWEAK return type: %@",%orig);
-    if((secondaryLabel = %orig)){
-        [secondaryLabel setTextColor:[UIColor whiteColor]];
+%hook _NCNotificationViewControllerView // ios 11
+-(void) layoutSubviews{
+    if(SYSTEM_VERSION_BETWEEN_OR_EQUAL_TO(@"11.0",@"11.9")){
+        if(![[self.contentView _viewControllerForAncestor] respondsToSelector:@selector(delegate)] || !enableBannerSection){
+            %orig;
+            return;
+        }
+        if([[[self.contentView _viewControllerForAncestor] delegate] isKindOfClass:%c(SBNotificationBannerDestination)]){
+            CGRect frame = self.frame;
+            frame.origin.y = 0;
+            self.frame = frame;
+        }
     }
-    return secondaryLabel;
-}
--(void) setSecondaryLabel {
-    [self.secondaryLabel setTextColor:[UIColor whiteColor]];
+    %orig;
 }
 %end
-*/
 
 // Posting all notifications :)
 
@@ -702,12 +795,17 @@ static void loadPrefs() {
 
     if(tweakEnabled) {
         %init;
+        %init(ShortLookGeneral);
         if(enableClearBackground) {
             %init(ClearBackground);
         }
-        %init(ShortLookGeneral);
-        %init(ShortLookNotification);
-        %init(ShortLookBanner);
+        if(enableNotifications){
+            %init(ShortLookNotification);
+        }
+        if(enableBannerSection){
+            %init(ShortLookBanner);
+        }
+        
     }
     /*
     [[NSNotificationCenter defaultCenter] addObserverForName:NULL object:NULL queue:NULL usingBlock:^(NSNotification *note) {

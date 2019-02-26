@@ -104,6 +104,7 @@ extern "C" UIColor *LCPParseColorString(NSString *colorStringFromPrefs, NSString
 @property (nonatomic, retain) UIVisualEffectView *headerEffectView;
 @property (nonatomic,retain) NCNotificationListHeaderTitleView * headerTitleView;
 @property (nonatomic, retain) NCNotificationListClearButton *clearButton;
+@property (nonatomic,retain) SBUILegibilityLabel * titleLabel;
 @end
 
 @interface UILabel (Class)
@@ -140,7 +141,8 @@ extern "C" UIColor *LCPParseColorString(NSString *colorStringFromPrefs, NSString
 @end
 
 @interface NCNotificationPriorityList
-@property (nonatomic,retain) NSArray * allNotificationRequests;
+@property (nonatomic,retain) NSArray * allNotificationRequests; // ios 12
+@property (nonatomic,retain) NSMutableOrderedSet * requests; // ios 11
 @end
 
 @interface NCNotificationCombinedListViewController : NCNotificationListViewController
