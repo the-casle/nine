@@ -94,7 +94,7 @@ extern "C" UIColor *LCPParseColorString(NSString *colorStringFromPrefs, NSString
 @interface NCNotificationListClearButton : UIView
 @end
 
-@interface NCNotificationListHeaderTitleView
+@interface NCNotificationListHeaderTitleView : UIView
 @property (nonatomic,retain) SBUILegibilityLabel * titleLabel;
 @end
 

@@ -422,9 +422,11 @@ BOOL isOnLockscreen() {
 %hook PLPlatterView
 -(void) layoutSubviews{
     %orig;
-    self.backgroundView.hidden = YES;
-    self.overlayAlpha = 0;
-    self.hasStackingShadow = NO;
+    if([self._viewControllerForAncestor isKindOfClass:%c(NCNotificationShortLookViewController)]){
+        self.backgroundView.hidden = YES;
+        self.overlayAlpha = 0;
+        self.hasStackingShadow = NO;
+    }
 }
 %end
 %end // End ShortLookNotification.
@@ -593,24 +595,32 @@ BOOL isOnLockscreen() {
         self.headerEffectView.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:.2];
         self.headerEffectView.frame = self.bounds;
         
-        [self addSubview:self.headerEffectView];
-        [self sendSubviewToBack:self.headerEffectView];
+        //[self addSubview:self.headerEffectView];
+        [self insertSubview:self.headerEffectView belowSubview:self.headerTitleView.titleLabel];
     }
     %orig;
     
     if(enableHeaders){
         self.headerEffectView.frame = self.bounds;
-        self.headerEffectView.frameHeight = self.bounds.size.height - 10;
+        self.headerEffectView.frameHeight = self.bounds.size.height - 15;
+        self.headerEffectView.frameY = 15;
         
         // changing size
-        self.headerTitleView.titleLabel.font = [UIFont fontWithName:@".SFUIDisplay" size:22.0];
+        /*self.headerTitleView.titleLabel.font = [UIFont fontWithName:@".SFUIDisplay" size:22.0];
         CGPoint center = self.headerTitleView.titleLabel.center;
         center.y = self.headerEffectView.frameHeight/2;
         self.headerTitleView.titleLabel.center = center;
         CGPoint center2 = self.clearButton.center;
         center2.y = self.headerEffectView.frameHeight/2;
-        self.clearButton.center = center2;
+        self.clearButton.center = center2;*/
     }
+}
+%end
+
+%hook NCNotificationListHeaderTitleView
+-(void) layoutSubviews{
+    %orig;
+    self.titleLabel.font = [UIFont fontWithName:@".SFUIDisplay" size:20.0];
 }
 %end
 
