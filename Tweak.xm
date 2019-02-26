@@ -416,12 +416,6 @@ BOOL isOnLockscreen() {
 %property (nonatomic, retain) UIVisualEffectView *notifEffectView;
 %property (nonatomic, retain) UIView *extendedView;
 
--(id)init{
-    if((self = %orig)){
-    }
-    return self;
-}
-
 -(void) layoutSubviews{
     NCNotificationGrabberView *grabberView = MSHookIvar<NCNotificationGrabberView *>(self, "_grabberView"); // Grabber used for later;
     
@@ -514,7 +508,6 @@ BOOL isOnLockscreen() {
             
             self.singleLine.hidden = YES;
         }
-        
     }
     %orig;
 }
@@ -541,7 +534,6 @@ BOOL isOnLockscreen() {
 %end
 %end // End ShortLookBanner.
 
-
 %hook NCNotificationListSectionHeaderView
 %property (nonatomic, retain) UIVisualEffectView *headerEffectView;
 -(id)initWithFrame:(CGRect) frame{
@@ -561,19 +553,8 @@ BOOL isOnLockscreen() {
     %orig;
     if(enableHeaders){
         self.headerEffectView.frame = self.bounds;
-        self.headerEffectView.frameHeight = self.bounds.size.height - 15;
-        self.headerEffectView.frameY = 15;
         [self insertSubview:self.headerEffectView belowSubview:self.headerTitleView];
-
-        self.clearButton.frameY = self.headerEffectView.frameY + 3.5;
     }
-}
-%end
-
-%hook NCNotificationListHeaderTitleView
--(void) layoutSubviews{
-    %orig;
-     if(enableHeaders) self.titleLabel.font = [UIFont fontWithName:@".SFUIDisplay" size:20.0];
 }
 %end
 
