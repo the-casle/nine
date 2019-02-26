@@ -7,6 +7,7 @@
 #import <substrate.h>
 #import "CustomWorks/TCSetFrame/TCSetFrame.h"
 #import "CustomWorks/ColorCube/CCColorCube.h"
+#import "CustomWorks/Versioning/Version.h"
 
 //extern "C" CFNotificationCenterRef CFNotificationCenterGetDistributedCenter(void);
 extern "C" UIColor *LCPParseColorString(NSString *colorStringFromPrefs, NSString *colorStringFallback);
