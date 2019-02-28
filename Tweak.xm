@@ -534,7 +534,7 @@ BOOL isOnLockscreen() {
             
             self.frameWidth = UIScreen.mainScreen.bounds.size.width;
             
-            if(!self.extendedView){
+            if(!self.extendedView && enableBanners){
                 self.extendedView = [[UIView alloc] initWithFrame:self.bounds];
                 self.extendedView.frameHeight += 32;
                 [self.superview addSubview: self.extendedView];
