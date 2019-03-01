@@ -1,6 +1,9 @@
 #include "headers.h"
 #import "TCBackgroundViewController.h"
+
+#ifndef SIMULATOR
 #import <Cephei/HBPreferences.h>
+#endif
 
 
 static BOOL enableBanners;
@@ -262,7 +265,7 @@ BOOL isOnLockscreen() {
 
 %group ShortLookGeneral
 %hook NCNotificationShortLookView
-%property (nonatomic, retain, getter=isNineBanner) BOOL nineBanner;
+%property (nonatomic, assign, getter=isNineBanner) BOOL nineBanner;
 -(void) layoutSubviews{
     %orig;
     
@@ -759,22 +762,25 @@ static void loadPrefs() {
     if (![NSBundle.mainBundle.bundleURL.lastPathComponent.pathExtension isEqualToString:@"app"]) {
         return;
     }
+    
+    #ifndef SIMULATOR
     HBPreferences *settings = [[HBPreferences alloc] initWithIdentifier:@"com.thecasle.nineprefs"];
     [settings registerDefaults:@{
-                                 @"tweakEnabled": @YES,
-                                 @"bannersEnabled": @NO,
-                                 @"shadedEnabled": @YES,
-                                 @"extendEnabled": @YES,
-                                 @"grabberEnabled": @YES,
-                                 @"iconRemoveEnabled": @NO,
-                                 @"colorEnabled": @NO,
-                                 @"bannerSectionEnabled": @YES,
-                                 @"clearBackgroundEnabled": @YES,
-                                 @"separatorsEnabled": @YES,
-                                 @"notificationsEnabled": @YES,
-                                 @"hideClockEnabled": @NO,
-                                 @"hideTextEnabled":@NO,
-                                 }];
+        @"tweakEnabled": @YES,
+        @"bannersEnabled": @NO,
+        @"shadedEnabled": @YES,
+        @"extendEnabled": @YES,
+        @"grabberEnabled": @YES,
+        @"iconRemoveEnabled": @NO,
+        @"colorEnabled": @NO,
+        @"bannerSectionEnabled": @YES,
+        @"clearBackgroundEnabled": @YES,
+        @"separatorsEnabled": @YES,
+        @"notificationsEnabled": @YES,
+        @"hideClockEnabled": @NO,
+        @"hideTextEnabled":@NO,
+    }];
+    
     BOOL tweakEnabled = [settings boolForKey:@"tweakEnabled"];
     enableBanners = [settings boolForKey:@"bannersEnabled"];
     enableHeaders = [settings boolForKey:@"shadedEnabled"];
@@ -787,6 +793,20 @@ static void loadPrefs() {
     enableNotifications = [settings boolForKey:@"notificationsEnabled"];
     enableHideClock = [settings boolForKey:@"hideClockEnabled"];
     enableHideText = [settings boolForKey:@"hideTextEnabled"];
+    #else
+    BOOL tweakEnabled = YES;
+    enableBanners = NO;
+    enableHeaders = YES;
+    enableExtend = YES;
+    enableGrabber = YES;
+    enableIconRemove = NO;
+    enableBannerSection = YES;
+    enableClearBackground = YES;
+    enableSeparators = YES;
+    enableNotifications = YES;
+    enableHideClock = NO;
+    enableHideText = NO;
+    #endif
     
     loadPrefs();
     CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, (CFNotificationCallback)loadPrefs, CFSTR("ch.mdaus.palette"), NULL, CFNotificationSuspensionBehaviorCoalesce);

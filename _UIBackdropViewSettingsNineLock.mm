@@ -2,7 +2,10 @@
 
 #import <substrate.h>
 #import "_UIBackdropViewSettingsNineLock.h"
+
+#ifndef SIMULATOR
 #import <Cephei/HBPreferences.h>
+#endif
 
 static NSNumber *blurValueGeneral;
 static NSNumber *darkeningValueGeneral;
@@ -17,6 +20,8 @@ static NSString *lockHex;
 - (instancetype) init{
     if(self = [super init]){
         // load preferences
+        
+        #ifndef SIMULATOR
         HBPreferences *settings = [[HBPreferences alloc] initWithIdentifier:@"com.thecasle.nineprefs"];
         [settings registerDefaults:@{
                                      @"generalBlurValue": @12,
@@ -30,6 +35,14 @@ static NSString *lockHex;
         blurValueGeneral = [NSNumber numberWithDouble: [settings doubleForKey:@"generalBlurValue"]];
         darkeningValueGeneral = [NSNumber numberWithDouble: ([settings doubleForKey:@"generalDarkeningValue"] * .1)];
         saturationValueGeneral = [NSNumber numberWithDouble: ([settings doubleForKey:@"generalSaturationValue"] * .1)];
+        
+        #else
+        lockHex = nil;
+        lockscreenColoring = [UIColor blackColor];
+        blurValueGeneral = [NSNumber numberWithDouble:12];
+        darkeningValueGeneral = [NSNumber numberWithDouble:.1];
+        saturationValueGeneral = [NSNumber numberWithDouble: 1.2];
+        #endif
         
         //self = [[objc_getClass("_UIBackdropViewSettingsBlur") alloc] init];
         

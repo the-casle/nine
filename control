@@ -4,7 +4,7 @@ Depends: mobilesubstrate, ws.hbang.common (>= 1.11), org.thebigboss.libcolorpick
 Version: 0.2.4
 Architecture: iphoneos-arm
 Description: iOS nine styled Notification Center and lock screen
- - the casle
+ - Working on resolving bugs
 Maintainer: Jake Kaslewicz <jakaslewicz@gmail.com>
 Author: Jake Kaslewicz
 Section: Tweaks

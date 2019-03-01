@@ -2,7 +2,10 @@
 
 #import <substrate.h>
 #import "_UIBackdropViewSettingsNineHistory.h"
+
+#ifndef SIMULATOR
 #import <Cephei/HBPreferences.h>
+#endif
 
 static NSNumber *blurValueHistory;
 static NSNumber *darkeningValueHistory;
@@ -16,6 +19,8 @@ static NSString *notifHex;
 
 - (instancetype) init{
     if(self = [super init]){
+        
+        #ifndef SIMULATOR
         // load preferences
         HBPreferences *settings = [[HBPreferences alloc] initWithIdentifier:@"com.thecasle.nineprefs"];
         [settings registerDefaults:@{
@@ -30,7 +35,13 @@ static NSString *notifHex;
         blurValueHistory = [NSNumber numberWithDouble: [settings doubleForKey:@"historyBlurValue"]];
         darkeningValueHistory = [NSNumber numberWithDouble: ([settings doubleForKey:@"historyDarkeningValue"] * .1)];
         saturationValueHistory = [NSNumber numberWithDouble: ([settings doubleForKey:@"historySaturationValue"] * .1)];
-
+        #else
+        notifHex = nil;
+        notificationCenterColoring = [UIColor blackColor];
+        blurValueHistory = [NSNumber numberWithDouble:20];
+        darkeningValueHistory = [NSNumber numberWithDouble:.4];
+        saturationValueHistory = [NSNumber numberWithDouble:1.2];
+        #endif
         
         //self = [[objc_getClass("_UIBackdropViewSettingsBlur") alloc] init];
         

@@ -2,7 +2,10 @@
 
 #import <substrate.h>
 #import "TCBackgroundViewController.h"
+
+#ifndef SIMULATOR
 #import <Cephei/HBPreferences.h>
+#endif
 
 static BOOL alwaysBlurEnabled;
 
@@ -27,14 +30,16 @@ extern BOOL isUILocked();
 
         _sbCont = [objc_getClass("SBUIController") sharedInstance];
         
-        
+        #ifndef SIMULATOR
         // load preferences
         HBPreferences *settings = [[HBPreferences alloc] initWithIdentifier:@"com.thecasle.nineprefs"];
         [settings registerDefaults:@{
                                      @"enableAlwaysBlur": @NO,
                                      }];
         alwaysBlurEnabled = [settings boolForKey:@"enableAlwaysBlur"];
-        
+        #else
+        alwaysBlurEnabled = NO;
+        #endif
         
         if(!self.view){
             self.view = [[UIView alloc] initWithFrame:screenFrame];

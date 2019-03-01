@@ -6,7 +6,6 @@
 #include <objc/runtime.h>
 #import <substrate.h>
 #import "CustomWorks/TCSetFrame/TCSetFrame.h"
-#import "CustomWorks/ColorCube/CCColorCube.h"
 #import "CustomWorks/Versioning/Version.h"
 
 //extern "C" CFNotificationCenterRef CFNotificationCenterGetDistributedCenter(void);
