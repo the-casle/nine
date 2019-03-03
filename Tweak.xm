@@ -99,6 +99,7 @@ BOOL isOnLockscreen() {
     if(!isOnLockscreen() && SYSTEM_VERSION_BETWEEN_OR_EQUAL_TO(@"12.0",@"12.2.3")){
         %orig(-5);
     } else %orig;
+    NSLog(@"nine_TWEAK | %d", isOnLockscreen());
 }
 %end
 
@@ -288,7 +289,6 @@ BOOL isOnLockscreen() {
 %property (nonatomic, retain) _UITableViewCellSeparatorView *topLine;
 -(void) layoutSubviews{
     NCNotificationGrabberView *grabberView = MSHookIvar<NCNotificationGrabberView *>(self, "_grabberView"); // Grabber used for later;
-    NSLog(@"nine_TWEAK | %d", self.isNineBanner);
     
     if(!self.isNineBanner){
         // not a banner
@@ -320,6 +320,8 @@ BOOL isOnLockscreen() {
             
             [[self backgroundMaterialView] setHidden:YES];
             MSHookIvar<MTMaterialView *>(self, "_mainOverlayView").hidden = true;
+            
+            self.notifEffectView.hidden = YES;
             
             BOOL rotationCheckLandscape = NO;
             [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
@@ -805,7 +807,7 @@ static void loadPrefs() {
     enableSeparators = YES;
     enableNotifications = YES;
     enableHideClock = NO;
-    enableHideText = NO;
+    enableHideText = YES;
     #endif
     
     loadPrefs();

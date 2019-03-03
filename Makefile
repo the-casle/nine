@@ -1,4 +1,4 @@
-SIMULATOR=1
+SIMULATOR=0
 
 ifeq ($(SIMULATOR),1)
 ARCHS = x86_64
@@ -6,6 +6,7 @@ TARGET = simulator:clang:12.1:11.1
 else
 ARCHS = arm64
 TARGET = iphone:clang:11.2:11.1
+export IPHONE_SIMULATOR_ROOT = /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs
 endif
 
 include $(THEOS)/makefiles/common.mk
@@ -26,15 +27,17 @@ endif
 
 include $(THEOS_MAKE_PATH)/tweak.mk
 
-
-ifeq ($(SIMULATOR),1)
 after-install::
-	install.exec "killall -9 SpringBoard"
-include $(THEOS_MAKE_PATH)/aggregate.mk
-
-else
-after-install::
+ifneq ($(SIMULATOR),1)
 	install.exec "killall -9 SpringBoard"
 SUBPROJECTS += nineprefs
-include $(THEOS_MAKE_PATH)/aggregate.mk
 endif
+
+after-all::
+ifeq ($(SIMULATOR),1)
+	rm /opt/simject/$(TWEAK_NAME).dylib
+	cp .theos/obj/iphone_simulator/debug/$(TWEAK_NAME).dylib /opt/simject/
+	~/Development/simject/bin/respring_simulator
+endif
+
+include $(THEOS_MAKE_PATH)/aggregate.mk
