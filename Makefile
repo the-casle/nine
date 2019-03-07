@@ -6,7 +6,6 @@ TARGET = simulator:clang:12.1:11.1
 else
 ARCHS = arm64
 TARGET = iphone:clang:11.2:11.1
-export IPHONE_SIMULATOR_ROOT = /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs
 endif
 
 include $(THEOS)/makefiles/common.mk

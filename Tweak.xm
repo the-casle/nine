@@ -267,6 +267,10 @@ BOOL isOnLockscreen() {
 %group ShortLookGeneral
 %hook NCNotificationShortLookView
 %property (nonatomic, assign, getter=isNineBanner) BOOL nineBanner;
+%property (nonatomic, retain) _UITableViewCellSeparatorView *singleLine;
+%property (nonatomic, retain) _UITableViewCellSeparatorView *topLine;
+%property (nonatomic, retain) UIVisualEffectView *notifEffectView;
+%property (nonatomic, retain) UIView *extendedView;
 -(void) layoutSubviews{
     %orig;
     
@@ -275,120 +279,119 @@ BOOL isOnLockscreen() {
     }
     
     NCNotificationGrabberView *grabberView = MSHookIvar<NCNotificationGrabberView *>(self, "_grabberView"); // Grabber used for later;
+    if(self.isNineBanner)[self handleBanner];
+    else [self handleNotification];
+    
+    %orig;
+    
     if(!self.isNineBanner && !enableNotifications) grabberView.hidden = YES;
 }
 -(BOOL)_shouldShowGrabber {
     return enableBannerSection ? YES : %orig;
 }
-%end
-%end // End ShortLookGeneral.
 
-%group ShortLookNotification
-%hook NCNotificationShortLookView
-%property (nonatomic, retain) _UITableViewCellSeparatorView *singleLine;
-%property (nonatomic, retain) _UITableViewCellSeparatorView *topLine;
--(void) layoutSubviews{
-    NCNotificationGrabberView *grabberView = MSHookIvar<NCNotificationGrabberView *>(self, "_grabberView"); // Grabber used for later;
-    
-    if(!self.isNineBanner){
-        // not a banner
-        if(enableNotifications){
-            if(self.backgroundView){
-                self.backgroundView.hidden = YES;
+%new
+-(void) handleBanner{
+    NCNotificationGrabberView *grabberView = MSHookIvar<NCNotificationGrabberView *>(self, "_grabberView");
+    if(enableBannerSection){
+        MSHookIvar<UIImageView *>(self, "_shadowView").hidden = YES;
+        if(colorBannersEnabled){
+            for(id object in ((UIView *)[self backgroundMaterialView]).allSubviews){
+                if ([object respondsToSelector:@selector(_cornerRadius)]) [((UIView *) object) _setCornerRadius:0];
             }
-            
-            MSHookIvar<UIImageView *>(self, "_shadowView").hidden = YES;
-            
+        } else {
             //Sets all text to white color
             UIColor *white = [UIColor whiteColor];
             
             [[self _headerContentView] setTintColor:white];
             [[[[self _headerContentView] _dateLabel] _layer] setFilters:nil];
             [[[[self _headerContentView] _titleLabel] _layer] setFilters:nil];
-            if ([self.notificationContentView respondsToSelector:@selector(_summaryLabel)]){
-                BSUIEmojiLabelView *fancyLabel = [self.notificationContentView _summaryLabel];
-                [[[fancyLabel contentLabel] _layer] setFilters:nil];
-            }
             
-            [[[self _headerContentView] _dateLabel] setTextColor:white];
-            [[[self _headerContentView] _titleLabel] setTextColor:white];
             [[self.notificationContentView _secondaryTextView] setTextColor:white];
             [[self.notificationContentView _primaryLabel] setTextColor:white];
             [[self.notificationContentView _primarySubtitleLabel] setTextColor:white];
             if ([self.notificationContentView respondsToSelector:@selector(_secondaryLabel)]) [[self.notificationContentView _secondaryLabel] setTextColor:white];
-            if ([self.notificationContentView respondsToSelector:@selector(_summaryLabel)]) [[self.notificationContentView _summaryLabel] setTextColor:white];
             
             [[self backgroundMaterialView] setHidden:YES];
-            MSHookIvar<MTMaterialView *>(self, "_mainOverlayView").hidden = true;
+        }
+        
+        MSHookIvar<MTMaterialView *>(self, "_mainOverlayView").hidden = true;
+        
+        CGPoint notifCenter = self.center;
+        notifCenter.x = self.superview.center.x;
+        self.center = notifCenter;
+        
+        if(!self.notifEffectView){
+            UIBlurEffect *blurEffect = [UIBlurEffect effectWithBlurRadius:17];
+            self.notifEffectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
             
-            self.notifEffectView.hidden = YES;
+            // Palette banners
+            if(paletteEnabled && self.backgroundView){
+                self.notifEffectView.backgroundColor = [UIColor clearColor];
+                self.backgroundView.frame = self.bounds;
+                [self.backgroundView _setCornerRadius: 0];
+                for(id object in self.backgroundView.subviews){
+                    ((UIView *)object).frame = self.bounds;
+                    for(id layer in ((UIView *)object).layer.sublayers){
+                        ((CALayer *)layer).frame = self.bounds;
+                    }
+                }
+            } else self.notifEffectView.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:.55];
             
-            BOOL rotationCheckLandscape = NO;
-            [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
-            UIInterfaceOrientation interfaceOrientation = [[UIApplication sharedApplication] statusBarOrientation];
+            self.notifEffectView.frame = self.bounds;
+            self.notifEffectView.frameX = 0;
+            self.notifEffectView.frameWidth = UIScreen.mainScreen.bounds.size.width;
             
-            if (UIDeviceOrientationIsLandscape(interfaceOrientation))
-            {
-                rotationCheckLandscape = YES;
-            }
-            [[UIDevice currentDevice] endGeneratingDeviceOrientationNotifications];
-            if(!enableExtend || rotationCheckLandscape == YES){
-                self.frameWidth = self.superview.frame.size.width - .5;
-            } else {
-                self.frameWidth = UIScreen.mainScreen.bounds.size.width - ((UIScreen.mainScreen.bounds.size.width - self.superview.frame.size.width) / 2);
-            }
-            
-            if(enableSeparators){
-                if(!self.topLine){
-                    
-                    self.topLine.drawsWithVibrantLightMode = NO;
-                    self.topLine = [[%c(_UITableViewCellSeparatorView) alloc] initWithFrame:self.frame];
-                    UIBlurEffect *effect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleDark];
-                    UIVibrancyEffect *vibEffect = [UIVibrancyEffect effectForBlurEffect:effect];
-                    [self.topLine setSeparatorEffect:vibEffect];
-                    self.topLine.alpha = .45;
-                    
-                    [self addSubview:self.topLine];
-                    
-                }
-                self.topLine.frameHeight = .5;
-                self.topLine.frameX = 12;
-                
-                if(!enableExtend || rotationCheckLandscape == YES){
-                    self.topLine.frameWidth = self.frame.size.width - 17;
-                } else {
-                    self.topLine.frameWidth = self.frame.size.width - 12;
-                }
-                self.topLine.frameY = -7;
-                
-                [self tcUpdateTopLine];
-                
-                if(!self.singleLine){
-                    
-                    self.singleLine.drawsWithVibrantLightMode = NO;
-                    self.singleLine = [[%c(_UITableViewCellSeparatorView) alloc] initWithFrame:self.frame];
-                    UIBlurEffect *effect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleDark];
-                    UIVibrancyEffect *vibEffect = [UIVibrancyEffect effectForBlurEffect:effect];
-                    [self.singleLine setSeparatorEffect:vibEffect];
-                    self.singleLine.alpha = .45;
-                    
-                    [self addSubview:self.singleLine];
-                    
-                }
-                self.singleLine.frameHeight = .5;
-                self.singleLine.frameX = 12;
-                
-                if(!enableExtend || rotationCheckLandscape == YES){
-                    self.singleLine.frameWidth = self.frame.size.width - 17;
-                } else {
-                    self.singleLine.frameWidth = self.frame.size.width - 12;
-                }
-                self.singleLine.frameY = 2 * self.center.y;
+            self.notifEffectView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+            if(!colorBannersEnabled){
+                [self addSubview:self.notifEffectView];
+                [self sendSubviewToBack:self.notifEffectView];
             }
         }
-        grabberView.hidden = YES;
+        
+        self.frameWidth = UIScreen.mainScreen.bounds.size.width;
+        
+        if(!self.extendedView && enableBanners){
+            self.extendedView = [[UIView alloc] initWithFrame:self.bounds];
+            self.extendedView.frameHeight += 32;
+            [self.superview addSubview: self.extendedView];
+        }
+        
+        [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
+        UIInterfaceOrientation interfaceOrientation = [[UIApplication sharedApplication] statusBarOrientation];
+        
+        if (UIDeviceOrientationIsPortrait(interfaceOrientation)) {
+            if(enableBanners && self.frameY != 32){
+                self.notifEffectView.frame = self.extendedView.frame;
+                [self.extendedView addSubview:self.notifEffectView];
+                self.frameY = 32;
+                [self.extendedView addSubview:self];
+            }
+        }
+        
+        if(!enableBanners){
+            self.frameY = -.5;
+        }
+        self.frameX = 0;
+        
+        [[UIDevice currentDevice] endGeneratingDeviceOrientationNotifications];
+        
+        // enable built in grabber and coloring
+        if(enableGrabber == YES){
+            grabberView.pill.backgroundColor = [[UIColor whiteColor] colorWithAlphaComponent:.6];
+        }
+        grabberView.hidden = enableGrabber ? NO : YES;
+        
+        if(enableIconRemove == YES && SYSTEM_VERSION_BETWEEN_OR_EQUAL_TO(@"11.0",@"11.9")){
+            MTPlatterHeaderContentView *header = [self _headerContentView];
+            header.iconButton.hidden = YES;
+            CGRect headerFrame = ((UILabel *)[header _titleLabel]).frame;
+            headerFrame.origin.x = -13;
+            ((UILabel *)[header _titleLabel]).frame = headerFrame;
+            
+        }
+        if([self respondsToSelector:@selector(singleLine)]) self.singleLine.hidden = YES;
     } else if(!enableBannerSection){
-        NSLog(@"nine_TWEAK | %d pt 2", self.isNineBanner);
         if(self.backgroundView){
             self.backgroundView.hidden = NO;
         }
@@ -414,7 +417,106 @@ BOOL isOnLockscreen() {
         if ([self.notificationContentView respondsToSelector:@selector(_secondaryLabel)]) [[self.notificationContentView _secondaryLabel] setTextColor:black];
         if ([self.notificationContentView respondsToSelector:@selector(_summaryLabel)]) [[self.notificationContentView _summaryLabel] setTextColor:black];
     }
-    %orig;
+}
+%new
+-(void) handleNotification{
+    NCNotificationGrabberView *grabberView = MSHookIvar<NCNotificationGrabberView *>(self, "_grabberView"); // Grabber used for later;
+    
+    if(enableNotifications){
+        if(self.backgroundView){
+            self.backgroundView.hidden = YES;
+        }
+        
+        MSHookIvar<UIImageView *>(self, "_shadowView").hidden = YES;
+        
+        //Sets all text to white color
+        UIColor *white = [UIColor whiteColor];
+        
+        [[self _headerContentView] setTintColor:white];
+        [[[[self _headerContentView] _dateLabel] _layer] setFilters:nil];
+        [[[[self _headerContentView] _titleLabel] _layer] setFilters:nil];
+        if ([self.notificationContentView respondsToSelector:@selector(_summaryLabel)]){
+            BSUIEmojiLabelView *fancyLabel = [self.notificationContentView _summaryLabel];
+            [[[fancyLabel contentLabel] _layer] setFilters:nil];
+        }
+        
+        [[[self _headerContentView] _dateLabel] setTextColor:white];
+        [[[self _headerContentView] _titleLabel] setTextColor:white];
+        [[self.notificationContentView _secondaryTextView] setTextColor:white];
+        [[self.notificationContentView _primaryLabel] setTextColor:white];
+        [[self.notificationContentView _primarySubtitleLabel] setTextColor:white];
+        if ([self.notificationContentView respondsToSelector:@selector(_secondaryLabel)]) [[self.notificationContentView _secondaryLabel] setTextColor:white];
+        if ([self.notificationContentView respondsToSelector:@selector(_summaryLabel)]) [[self.notificationContentView _summaryLabel] setTextColor:white];
+        
+        [[self backgroundMaterialView] setHidden:YES];
+        MSHookIvar<MTMaterialView *>(self, "_mainOverlayView").hidden = true;
+        
+        self.notifEffectView.hidden = YES;
+        
+        BOOL rotationCheckLandscape = NO;
+        [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
+        UIInterfaceOrientation interfaceOrientation = [[UIApplication sharedApplication] statusBarOrientation];
+        
+        if (UIDeviceOrientationIsLandscape(interfaceOrientation))
+        {
+            rotationCheckLandscape = YES;
+        }
+        [[UIDevice currentDevice] endGeneratingDeviceOrientationNotifications];
+        if(!enableExtend || rotationCheckLandscape == YES){
+            self.frameWidth = self.superview.frame.size.width - .5;
+        } else {
+            self.frameWidth = UIScreen.mainScreen.bounds.size.width - ((UIScreen.mainScreen.bounds.size.width - self.superview.frame.size.width) / 2);
+        }
+        
+        if(enableSeparators){
+            if(!self.topLine){
+                
+                self.topLine.drawsWithVibrantLightMode = NO;
+                self.topLine = [[%c(_UITableViewCellSeparatorView) alloc] initWithFrame:self.frame];
+                UIBlurEffect *effect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleDark];
+                UIVibrancyEffect *vibEffect = [UIVibrancyEffect effectForBlurEffect:effect];
+                [self.topLine setSeparatorEffect:vibEffect];
+                self.topLine.alpha = .45;
+                
+                [self addSubview:self.topLine];
+                
+            }
+            self.topLine.frameHeight = .5;
+            self.topLine.frameX = 12;
+            
+            if(!enableExtend || rotationCheckLandscape == YES){
+                self.topLine.frameWidth = self.frame.size.width - 17;
+            } else {
+                self.topLine.frameWidth = self.frame.size.width - 12;
+            }
+            self.topLine.frameY = -7;
+            
+            [self tcUpdateTopLine];
+            
+            if(!self.singleLine){
+                
+                self.singleLine.drawsWithVibrantLightMode = NO;
+                self.singleLine = [[%c(_UITableViewCellSeparatorView) alloc] initWithFrame:self.frame];
+                UIBlurEffect *effect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleDark];
+                UIVibrancyEffect *vibEffect = [UIVibrancyEffect effectForBlurEffect:effect];
+                [self.singleLine setSeparatorEffect:vibEffect];
+                self.singleLine.alpha = .45;
+                
+                [self addSubview:self.singleLine];
+                
+            }
+            self.singleLine.frameHeight = .5;
+            self.singleLine.frameX = 12;
+            
+            if(!enableExtend || rotationCheckLandscape == YES){
+                self.singleLine.frameWidth = self.frame.size.width - 17;
+            } else {
+                self.singleLine.frameWidth = self.frame.size.width - 12;
+            }
+            self.singleLine.frameY = 2 * self.center.y;
+        }
+    }
+    grabberView.hidden = YES;
 }
 
 %new
@@ -455,7 +557,7 @@ BOOL isOnLockscreen() {
 %hook PLPlatterView
 -(void) layoutSubviews{
     %orig;
-    if(SYSTEM_VERSION_BETWEEN_OR_EQUAL_TO(@"12.0",@"12.2.3")){
+    if(SYSTEM_VERSION_BETWEEN_OR_EQUAL_TO(@"12.0",@"12.2.3") && enableNotifications){
         NCNotificationViewControllerView *contView = (NCNotificationViewControllerView *)((NCNotificationShortLookViewController *)self._viewControllerForAncestor).view;
         if([contView isKindOfClass:%c(NCNotificationViewControllerView)]){
             if(!((NCNotificationShortLookView *)contView.contentView).isNineBanner || enableBannerSection){
@@ -465,124 +567,6 @@ BOOL isOnLockscreen() {
             }
         }
     }
-}
-%end
-%end // End ShortLookNotification.
-
-%group ShortLookBanner
-%hook NCNotificationShortLookView
-%property (nonatomic, retain) UIVisualEffectView *notifEffectView;
-%property (nonatomic, retain) UIView *extendedView;
-
--(void) layoutSubviews{
-    NCNotificationGrabberView *grabberView = MSHookIvar<NCNotificationGrabberView *>(self, "_grabberView"); // Grabber used for later;
-    
-    if(self.isNineBanner){
-        // is a banner
-        if(enableBannerSection){
-            
-            MSHookIvar<UIImageView *>(self, "_shadowView").hidden = YES;
-            if(colorBannersEnabled){
-                for(id object in ((UIView *)[self backgroundMaterialView]).allSubviews){
-                    if ([object respondsToSelector:@selector(_cornerRadius)]) [((UIView *) object) _setCornerRadius:0];
-                }
-            } else {
-                //Sets all text to white color
-                UIColor *white = [UIColor whiteColor];
-                
-                [[self _headerContentView] setTintColor:white];
-                [[[[self _headerContentView] _dateLabel] _layer] setFilters:nil];
-                [[[[self _headerContentView] _titleLabel] _layer] setFilters:nil];
-                
-                
-                [[self.notificationContentView _secondaryTextView] setTextColor:white];
-                [[self.notificationContentView _primaryLabel] setTextColor:white];
-                [[self.notificationContentView _primarySubtitleLabel] setTextColor:white];
-                if ([self.notificationContentView respondsToSelector:@selector(_secondaryLabel)]) [[self.notificationContentView _secondaryLabel] setTextColor:white];
-                
-                [[self backgroundMaterialView] setHidden:YES];
-            }
-            
-            MSHookIvar<MTMaterialView *>(self, "_mainOverlayView").hidden = true;
-            
-            CGPoint notifCenter = self.center;
-            notifCenter.x = self.superview.center.x;
-            self.center = notifCenter;
-            
-            if(!self.notifEffectView){
-                UIBlurEffect *blurEffect = [UIBlurEffect effectWithBlurRadius:17];
-                self.notifEffectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
-                
-                // Palette banners
-                if(paletteEnabled && self.backgroundView){
-                    self.notifEffectView.backgroundColor = [UIColor clearColor];
-                    self.backgroundView.frame = self.bounds;
-                    [self.backgroundView _setCornerRadius: 0];
-                    for(id object in self.backgroundView.subviews){
-                        ((UIView *)object).frame = self.bounds;
-                        for(id layer in ((UIView *)object).layer.sublayers){
-                            ((CALayer *)layer).frame = self.bounds;
-                        }
-                    }
-                } else self.notifEffectView.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:.55];
-                
-                self.notifEffectView.frame = self.bounds;
-                self.notifEffectView.frameX = 0;
-                self.notifEffectView.frameWidth = UIScreen.mainScreen.bounds.size.width;
-                
-                self.notifEffectView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-                if(!colorBannersEnabled){
-                    [self addSubview:self.notifEffectView];
-                    [self sendSubviewToBack:self.notifEffectView];
-                }
-            }
-            
-            self.frameWidth = UIScreen.mainScreen.bounds.size.width;
-            
-            if(!self.extendedView && enableBanners){
-                self.extendedView = [[UIView alloc] initWithFrame:self.bounds];
-                self.extendedView.frameHeight += 32;
-                [self.superview addSubview: self.extendedView];
-            }
-            
-            [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
-            UIInterfaceOrientation interfaceOrientation = [[UIApplication sharedApplication] statusBarOrientation];
-            
-            if (UIDeviceOrientationIsPortrait(interfaceOrientation)) {
-                if(enableBanners && self.frameY != 32){
-                    self.notifEffectView.frame = self.extendedView.frame;
-                    [self.extendedView addSubview:self.notifEffectView];
-                    self.frameY = 32;
-                    [self.extendedView addSubview:self];
-                }
-            }
-            
-            if(!enableBanners){
-                self.frameY = -.5;
-            }
-            self.frameX = 0;
-            
-            [[UIDevice currentDevice] endGeneratingDeviceOrientationNotifications];
-            
-            // enable built in grabber and coloring
-            if(enableGrabber == YES){
-                grabberView.pill.backgroundColor = [[UIColor whiteColor] colorWithAlphaComponent:.6];
-            }
-            grabberView.hidden = enableGrabber ? NO : YES;
-            
-            if(enableIconRemove == YES && SYSTEM_VERSION_BETWEEN_OR_EQUAL_TO(@"11.0",@"11.9")){
-                MTPlatterHeaderContentView *header = [self _headerContentView];
-                header.iconButton.hidden = YES;
-                CGRect headerFrame = ((UILabel *)[header _titleLabel]).frame;
-                headerFrame.origin.x = -13;
-                ((UILabel *)[header _titleLabel]).frame = headerFrame;
-                
-            }
-            
-            if([self respondsToSelector:@selector(singleLine)]) self.singleLine.hidden = YES;
-        }
-    }
-    %orig;
 }
 %end
 
@@ -613,7 +597,7 @@ BOOL isOnLockscreen() {
     %orig;
 }
 %end
-%end // End ShortLookBanner.
+%end // End ShortLookNotification.
 
 %hook NCNotificationListSectionHeaderView
 %property (nonatomic, retain) UIVisualEffectView *headerEffectView;
@@ -820,12 +804,6 @@ static void loadPrefs() {
         %init(ShortLookGeneral);
         if(enableClearBackground) {
             %init(ClearBackground);
-        }
-        if(enableNotifications){
-            %init(ShortLookNotification);
-        }
-        if(enableBannerSection){
-            %init(ShortLookBanner);
         }
         
     }

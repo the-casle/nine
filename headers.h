@@ -78,7 +78,6 @@ extern "C" UIColor *LCPParseColorString(NSString *colorStringFromPrefs, NSString
 -(id) _customContentView;
 @property (nonatomic, retain) UIView *backgroundView;
 @property (getter=_notificationContentView,nonatomic,readonly) NCNotificationContentView * notificationContentView;
-
 @property (nonatomic, getter=isNineBanner) BOOL nineBanner;
 @property (nonatomic, retain) _UITableViewCellSeparatorView *singleLine;
 @property (nonatomic, retain) _UITableViewCellSeparatorView *topLine;
@@ -86,6 +85,8 @@ extern "C" UIColor *LCPParseColorString(NSString *colorStringFromPrefs, NSString
 @property (nonatomic, retain) UIView *extendedView;
 
 -(void) tcUpdateTopLine;
+-(void) handleBanner;
+-(void) handleNotification;
 @end
 
 @interface SBUILegibilityLabel : UIView
