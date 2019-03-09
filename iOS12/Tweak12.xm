@@ -1,12 +1,12 @@
-#include "headers.h"
-#import "TCBackgroundViewController.h"
+#include "../headers.h"
+#import "../TCBackgroundViewController.h"
 
 #ifndef SIMULATOR
 #import <Cephei/HBPreferences.h>
 #endif
 
 
-static BOOL enableBanners;
+static BOOL enableXBanners;
 static BOOL enableHeaders;
 static BOOL enableExtend;
 static BOOL enableGrabber;
@@ -71,11 +71,11 @@ BOOL isOnLockscreen() {
     SBWallpaperController *wallpaperCont = [%c(SBWallpaperController) sharedInstance];
     if(isUILocked()){
         [wallpaperCont setVariant:0];
-        if(SYSTEM_VERSION_BETWEEN_OR_EQUAL_TO(@"12.0",@"12.2.3"))[[wallpaperCont _window] setWindowLevel:1035]; // What it normally is
+        [[wallpaperCont _window] setWindowLevel:1035]; // What it normally is
     }
     if(!isOnLockscreen()){
         [wallpaperCont setVariant:1];
-        if(SYSTEM_VERSION_BETWEEN_OR_EQUAL_TO(@"12.0",@"12.2.3"))[[wallpaperCont _window] setWindowLevel:-5]; // Below icons
+        [[wallpaperCont _window] setWindowLevel:-5]; // Below icons
     }
     
     if(isOnLockscreen()){
@@ -96,7 +96,7 @@ BOOL isOnLockscreen() {
 
 %hook _SBWallpaperWindow
 -(void) setWindowLevel:(CGFloat) level{
-    if(!isOnLockscreen() && SYSTEM_VERSION_BETWEEN_OR_EQUAL_TO(@"12.0",@"12.2.3")){
+    if(!isOnLockscreen()){
         %orig(-5);
     } else %orig;
     NSLog(@"nine_TWEAK | %d", isOnLockscreen());
@@ -314,7 +314,7 @@ BOOL isOnLockscreen() {
             
             [[self backgroundMaterialView] setHidden:YES];
         }
-        
+// MAKE SURE TO FIX IPX BANNERS FOR NOTIFCA!!!!!!!!!!!!!!!!!!!!!
         MSHookIvar<MTMaterialView *>(self, "_mainOverlayView").hidden = true;
         
         CGPoint notifCenter = self.center;
@@ -337,7 +337,9 @@ BOOL isOnLockscreen() {
                     }
                 }
             } else self.notifEffectView.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:.55];
-            
+            if([self respondsToSelector:@selector(ntfDynamicColor:)] && self.ntfDynamicColor){
+                self.backgroundColor = self.ntfDynamicColor;
+            }
             self.notifEffectView.frame = self.bounds;
             self.notifEffectView.frameX = 0;
             self.notifEffectView.frameWidth = UIScreen.mainScreen.bounds.size.width;
@@ -351,17 +353,16 @@ BOOL isOnLockscreen() {
         
         self.frameWidth = UIScreen.mainScreen.bounds.size.width;
         
-        if(!self.extendedView && enableBanners){
+        if(!self.extendedView && enableXBanners){
             self.extendedView = [[UIView alloc] initWithFrame:self.bounds];
             self.extendedView.frameHeight += 32;
             [self.superview addSubview: self.extendedView];
         }
         
-        [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
         UIInterfaceOrientation interfaceOrientation = [[UIApplication sharedApplication] statusBarOrientation];
         
-        if (UIDeviceOrientationIsPortrait(interfaceOrientation)) {
-            if(enableBanners && self.frameY != 32){
+        if (interfaceOrientation == UIDeviceOrientationPortrait) {
+            if(enableXBanners && self.frameY != 32){
                 self.notifEffectView.frame = self.extendedView.frame;
                 [self.extendedView addSubview:self.notifEffectView];
                 self.frameY = 32;
@@ -369,27 +370,21 @@ BOOL isOnLockscreen() {
             }
         }
         
-        if(!enableBanners){
+        if(!enableXBanners){
             self.frameY = -.5;
         }
-        self.frameX = 0;
-        
-        [[UIDevice currentDevice] endGeneratingDeviceOrientationNotifications];
+        if (enableXBanners && interfaceOrientation == UIDeviceOrientationLandscapeLeft) {
+            self.frameX = 25;
+            self.notifEffectView.frameX = -25;
+            self.frameWidth = UIScreen.mainScreen.bounds.size.width -25;
+        } else self.frameX = 0;
         
         // enable built in grabber and coloring
         if(enableGrabber == YES){
             grabberView.pill.backgroundColor = [[UIColor whiteColor] colorWithAlphaComponent:.6];
         }
         grabberView.hidden = enableGrabber ? NO : YES;
-        
-        if(enableIconRemove == YES && SYSTEM_VERSION_BETWEEN_OR_EQUAL_TO(@"11.0",@"11.9")){
-            MTPlatterHeaderContentView *header = [self _headerContentView];
-            header.iconButton.hidden = YES;
-            CGRect headerFrame = ((UILabel *)[header _titleLabel]).frame;
-            headerFrame.origin.x = -13;
-            ((UILabel *)[header _titleLabel]).frame = headerFrame;
-            
-        }
+
         if([self respondsToSelector:@selector(singleLine)]) self.singleLine.hidden = YES;
     } else if(!enableBannerSection){
         if(self.backgroundView){
@@ -453,16 +448,9 @@ BOOL isOnLockscreen() {
         
         self.notifEffectView.hidden = YES;
         
-        BOOL rotationCheckLandscape = NO;
-        [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
         UIInterfaceOrientation interfaceOrientation = [[UIApplication sharedApplication] statusBarOrientation];
-        
-        if (UIDeviceOrientationIsLandscape(interfaceOrientation))
-        {
-            rotationCheckLandscape = YES;
-        }
-        [[UIDevice currentDevice] endGeneratingDeviceOrientationNotifications];
-        if(!enableExtend || rotationCheckLandscape == YES){
+
+        if(!enableExtend || interfaceOrientation == UIDeviceOrientationLandscapeLeft || interfaceOrientation == UIDeviceOrientationLandscapeRight){
             self.frameWidth = self.superview.frame.size.width - .5;
         } else {
             self.frameWidth = UIScreen.mainScreen.bounds.size.width - ((UIScreen.mainScreen.bounds.size.width - self.superview.frame.size.width) / 2);
@@ -484,7 +472,7 @@ BOOL isOnLockscreen() {
             self.topLine.frameHeight = .5;
             self.topLine.frameX = 12;
             
-            if(!enableExtend || rotationCheckLandscape == YES){
+            if(!enableExtend || interfaceOrientation == UIDeviceOrientationLandscapeLeft || interfaceOrientation == UIDeviceOrientationLandscapeRight){
                 self.topLine.frameWidth = self.frame.size.width - 17;
             } else {
                 self.topLine.frameWidth = self.frame.size.width - 12;
@@ -508,7 +496,7 @@ BOOL isOnLockscreen() {
             self.singleLine.frameHeight = .5;
             self.singleLine.frameX = 12;
             
-            if(!enableExtend || rotationCheckLandscape == YES){
+            if(!enableExtend || interfaceOrientation == UIDeviceOrientationLandscapeLeft || interfaceOrientation == UIDeviceOrientationLandscapeRight){
                 self.singleLine.frameWidth = self.frame.size.width - 17;
             } else {
                 self.singleLine.frameWidth = self.frame.size.width - 12;
@@ -521,43 +509,26 @@ BOOL isOnLockscreen() {
 
 %new
 -(void) tcUpdateTopLine{
-    if(SYSTEM_VERSION_BETWEEN_OR_EQUAL_TO(@"12.0",@"12.2.3")){
-        if([self._viewControllerForAncestor respondsToSelector:@selector(delegate)]){
-            if([((NCNotificationCombinedListViewController *)((NCNotificationShortLookViewController *)self._viewControllerForAncestor)._parentViewController).notificationPriorityList.allNotificationRequests firstObject] == ((NCNotificationShortLookViewController *)self._viewControllerForAncestor).notificationRequest){
-                self.topLine.alpha = 0;
-                self.topLine.hidden = NO;
-                [UIView animateWithDuration:.3
-                                      delay:0
-                                    options:UIViewAnimationOptionCurveEaseInOut
-                                 animations:^{self.topLine.alpha = .45;}
-                                 completion:nil];
-            } else {
-                self.topLine.hidden = YES;
-            }
-        }
-    } else if(SYSTEM_VERSION_BETWEEN_OR_EQUAL_TO(@"11.0",@"11.9")){
-        if([self._viewControllerForAncestor respondsToSelector:@selector(delegate)]){
-            if([((NCNotificationCombinedListViewController *)((NCNotificationShortLookViewController *)self._viewControllerForAncestor)._parentViewController).notificationPriorityList.requests firstObject] == ((NCNotificationShortLookViewController *)self._viewControllerForAncestor).notificationRequest){
-                self.topLine.alpha = 0;
-                self.topLine.hidden = NO;
-                [UIView animateWithDuration:.3
-                                      delay:0
-                                    options:UIViewAnimationOptionCurveEaseInOut
-                                 animations:^{self.topLine.alpha = .45;}
-                                 completion:nil];
-            } else {
-                self.topLine.hidden = YES;
-            }
+    if([self._viewControllerForAncestor respondsToSelector:@selector(delegate)]){
+        if([((NCNotificationCombinedListViewController *)((NCNotificationShortLookViewController *)self._viewControllerForAncestor)._parentViewController).notificationPriorityList.allNotificationRequests firstObject] == ((NCNotificationShortLookViewController *)self._viewControllerForAncestor).notificationRequest){
+            self.topLine.alpha = 0;
+            self.topLine.hidden = NO;
+            [UIView animateWithDuration:.3
+                                  delay:0
+                                options:UIViewAnimationOptionCurveEaseInOut
+                             animations:^{self.topLine.alpha = .45;}
+                             completion:nil];
+        } else {
+            self.topLine.hidden = YES;
         }
     }
-    
 }
 %end
 
 %hook PLPlatterView
 -(void) layoutSubviews{
     %orig;
-    if(SYSTEM_VERSION_BETWEEN_OR_EQUAL_TO(@"12.0",@"12.2.3") && enableNotifications){
+    if(enableNotifications){
         NCNotificationViewControllerView *contView = (NCNotificationViewControllerView *)((NCNotificationShortLookViewController *)self._viewControllerForAncestor).view;
         if([contView isKindOfClass:%c(NCNotificationViewControllerView)]){
             if(!((NCNotificationShortLookView *)contView.contentView).isNineBanner || enableBannerSection){
@@ -616,25 +587,8 @@ BOOL isOnLockscreen() {
 }
 -(void) _layoutHeaderTitleView{
     %orig;
-    if(enableHeaders && SYSTEM_VERSION_BETWEEN_OR_EQUAL_TO(@"12.0",@"12.3")){
+    if(enableHeaders){
         self.headerEffectView.frame = self.bounds;
-        [self insertSubview:self.headerEffectView belowSubview:self.headerTitleView];
-    }
-}
--(void) layoutSubviews{
-    %orig;
-    if(enableHeaders && SYSTEM_VERSION_BETWEEN_OR_EQUAL_TO(@"11.0",@"11.9")){
-        self.headerEffectView.frame = self.bounds;
-        self.headerEffectView.frameHeight = self.bounds.size.height - 10;
-        
-        // changing size
-        self.titleLabel.font = [UIFont fontWithName:@".SFUIDisplay" size:22.0];
-        CGPoint center = self.titleLabel.center;
-        center.y = self.headerEffectView.frameHeight/2;
-        self.titleLabel.center = center;
-        CGPoint center2 = self.clearButton.center;
-        center2.y = self.headerEffectView.frameHeight/2;
-        self.clearButton.center = center2;
         [self insertSubview:self.headerEffectView belowSubview:self.headerTitleView];
     }
 }
@@ -657,35 +611,16 @@ BOOL isOnLockscreen() {
 }
 %end
 
-%hook NCNotificationViewControllerView // ios 12
+%hook NCNotificationViewControllerView
 -(void) layoutSubviews{
-    if(SYSTEM_VERSION_BETWEEN_OR_EQUAL_TO(@"12.0",@"12.3")){
-        if(![[self.contentView _viewControllerForAncestor] respondsToSelector:@selector(delegate)] || !enableBannerSection){
-            %orig;
-            return;
-        }
-        if([[[self.contentView _viewControllerForAncestor] delegate] isKindOfClass:%c(SBNotificationBannerDestination)]){
-            CGRect frame = self.frame;
-            frame.origin.y = 0;
-            self.frame = frame;
-        }
+    if(![[self.contentView _viewControllerForAncestor] respondsToSelector:@selector(delegate)] || !enableBannerSection){
+        %orig;
+        return;
     }
-    %orig;
-}
-%end
-
-%hook _NCNotificationViewControllerView // ios 11
--(void) layoutSubviews{
-    if(SYSTEM_VERSION_BETWEEN_OR_EQUAL_TO(@"11.0",@"11.9")){
-        if(![[self.contentView _viewControllerForAncestor] respondsToSelector:@selector(delegate)] || !enableBannerSection){
-            %orig;
-            return;
-        }
-        if([[[self.contentView _viewControllerForAncestor] delegate] isKindOfClass:%c(SBNotificationBannerDestination)]){
-            CGRect frame = self.frame;
-            frame.origin.y = 0;
-            self.frame = frame;
-        }
+    if([[[self.contentView _viewControllerForAncestor] delegate] isKindOfClass:%c(SBNotificationBannerDestination)]){
+        CGRect frame = self.frame;
+        frame.origin.y = 0;
+        self.frame = frame;
     }
     %orig;
 }
@@ -768,7 +703,7 @@ static void loadPrefs() {
     }];
     
     BOOL tweakEnabled = [settings boolForKey:@"tweakEnabled"];
-    enableBanners = [settings boolForKey:@"bannersEnabled"];
+    enableXBanners = [settings boolForKey:@"bannersEnabled"];
     enableHeaders = [settings boolForKey:@"shadedEnabled"];
     enableExtend = [settings boolForKey:@"extendEnabled"];
     enableGrabber = [settings boolForKey:@"grabberEnabled"];
@@ -781,7 +716,7 @@ static void loadPrefs() {
     enableHideText = [settings boolForKey:@"hideTextEnabled"];
     #else
     BOOL tweakEnabled = YES;
-    enableBanners = NO;
+    enableXBanners = YES;
     enableHeaders = YES;
     enableExtend = YES;
     enableGrabber = YES;
@@ -799,7 +734,7 @@ static void loadPrefs() {
     CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, (CFNotificationCallback)loadPrefs, CFSTR("com.golddavid.colorbanners2"), NULL, CFNotificationSuspensionBehaviorCoalesce);
     
 
-    if(tweakEnabled) {
+    if(tweakEnabled && SYSTEM_VERSION_12) {
         %init;
         %init(ShortLookGeneral);
         if(enableClearBackground) {

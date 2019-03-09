@@ -11,7 +11,7 @@ endif
 include $(THEOS)/makefiles/common.mk
 
 TWEAK_NAME = nine
-nine_FILES = $(wildcard *.xm *.mm CustomWorks/*/*.m)
+nine_FILES = $(wildcard *.xm *.mm iOS12/*.xm iOS11/*.xm CustomWorks/*/*.m)
 
 
 ifeq ($(SIMULATOR),1)

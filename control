@@ -1,7 +1,7 @@
 Package: com.thecasle.nine
 Name: nine
 Depends: mobilesubstrate, ws.hbang.common (>= 1.11), org.thebigboss.libcolorpicker
-Version: 0.2.4
+Version: 0.2.5
 Architecture: iphoneos-arm
 Description: iOS nine styled Notification Center and lock screen
  - Working on resolving bugs

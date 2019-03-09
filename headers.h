@@ -54,7 +54,7 @@ extern "C" UIColor *LCPParseColorString(NSString *colorStringFromPrefs, NSString
 -(id)_secondaryLabel;
 @end
 
-@interface MTPlatterHeaderContentView
+@interface MTPlatterHeaderContentView : UIView // ios 11
 -(id) _dateLabel;
 -(id) _titleLabel;
 -(id) _primarySubtitleLabel;
@@ -83,6 +83,8 @@ extern "C" UIColor *LCPParseColorString(NSString *colorStringFromPrefs, NSString
 @property (nonatomic, retain) _UITableViewCellSeparatorView *topLine;
 @property (nonatomic, retain) UIVisualEffectView *notifEffectView;
 @property (nonatomic, retain) UIView *extendedView;
+
+@property (nonatomic, retain) UIColor *ntfDynamicColor; // Notifica
 
 -(void) tcUpdateTopLine;
 -(void) handleBanner;
