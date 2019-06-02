@@ -1,7 +1,8 @@
+export TARGET = iphone:clang:11.2:10.0
+
 include $(THEOS)/makefiles/common.mk
 
 BUNDLE_NAME = nineprefs
-ARCHS = arm64
 nineprefs_FILES = $(wildcard *.m)
 nineprefs_INSTALL_PATH = /Library/PreferenceBundles
 nineprefs_FRAMEWORKS = UIKit

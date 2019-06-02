@@ -373,7 +373,8 @@ BOOL isOnLockscreen() {
         if(!enableXBanners){
             self.frameY = -.5;
         }
-        if (enableXBanners && interfaceOrientation == UIDeviceOrientationLandscapeLeft) {
+        NSLog(@"nine_TWEAK | %li", (long)[[UIApplication sharedApplication] statusBarOrientation]);
+        if (enableXBanners && (interfaceOrientation == UIDeviceOrientationLandscapeLeft || interfaceOrientation == UIDeviceOrientationLandscapeRight)) {
             self.frameX = 25;
             self.notifEffectView.frameX = -25;
             self.frameWidth = UIScreen.mainScreen.bounds.size.width -25;

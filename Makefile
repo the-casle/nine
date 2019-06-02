@@ -4,7 +4,7 @@ ifeq ($(SIMULATOR),1)
 ARCHS = x86_64
 TARGET = simulator:clang:12.1:11.1 
 else
-ARCHS = arm64
+ARCHS = arm64 arm64e
 TARGET = iphone:clang:11.2:11.1
 endif
 
